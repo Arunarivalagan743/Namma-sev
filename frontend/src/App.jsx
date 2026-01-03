@@ -33,8 +33,12 @@ import CalendarPage from './pages/engagement/CalendarPage';
 import CitizenDashboard from './pages/citizen/Dashboard';
 import MyComplaints from './pages/citizen/MyComplaints';
 import NewComplaint from './pages/citizen/NewComplaint';
+import ComplaintDetail from './pages/citizen/ComplaintDetail';
 import Announcements from './pages/citizen/Announcements';
 import Profile from './pages/citizen/Profile';
+
+// Public Pages
+import TrackComplaint from './pages/public/TrackComplaint';
 
 // Admin Pages
 import AdminDashboard from './pages/admin/Dashboard';
@@ -55,7 +59,7 @@ function App() {
   return (
     <TranslationProvider>
       <AuthProvider>
-        <Router>
+        <Router future={{ v7_relativeSplatPath: true, v7_startTransition: true }}>
           <Toaster 
             position="top-right"
             toastOptions={{
@@ -90,11 +94,17 @@ function App() {
           {/* Status Pages */}
           <Route path="/pending-approval" element={<PendingApproval />} />
 
+          {/* Public Complaint Tracking */}
+          <Route path="/track" element={<TrackComplaint />} />
+          <Route path="/track/:trackingId" element={<TrackComplaint />} />
+
           {/* Citizen Protected Routes - Pages have their own CitizenNav */}
           <Route element={<ProtectedRoute />}>
             <Route path="/dashboard" element={<HomePage />} />
             <Route path="/my-complaints" element={<MyComplaints />} />
             <Route path="/new-complaint" element={<NewComplaint />} />
+            <Route path="/citizen/complaints/new" element={<NewComplaint />} />
+            <Route path="/citizen/complaints/:id" element={<ComplaintDetail />} />
             <Route path="/announcements" element={<Announcements />} />
             <Route path="/profile" element={<Profile />} />
           </Route>

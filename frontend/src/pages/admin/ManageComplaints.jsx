@@ -9,7 +9,9 @@ import {
   FiMapPin,
   FiClock,
   FiEdit2,
-  FiX
+  FiX,
+  FiImage,
+  FiExternalLink
 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 
@@ -233,6 +235,38 @@ const ManageComplaints = () => {
                         <p className="text-blue-700">{complaint.admin_remarks}</p>
                       </div>
                     )}
+
+                    {/* Complaint Images */}
+                    {(complaint.image_url || complaint.image_url_2 || complaint.image_url_3) && (
+                      <div className="mt-3 ml-6 sm:ml-8">
+                        <div className="flex items-center gap-1 text-xs text-gray-500 mb-2">
+                          <FiImage size={12} />
+                          <span>Attached Images</span>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {[complaint.image_url, complaint.image_url_2, complaint.image_url_3]
+                            .filter(Boolean)
+                            .map((url, index) => (
+                              <a
+                                key={index}
+                                href={url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="relative group"
+                              >
+                                <img
+                                  src={url}
+                                  alt={`Complaint image ${index + 1}`}
+                                  className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-lg border border-gray-200 hover:border-gov-blue transition-colors"
+                                />
+                                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 rounded-lg flex items-center justify-center transition-all">
+                                  <FiExternalLink className="text-white opacity-0 group-hover:opacity-100" size={16} />
+                                </div>
+                              </a>
+                            ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex items-center space-x-2 sm:space-x-3 ml-6 sm:ml-8 lg:ml-0">
@@ -310,6 +344,40 @@ const ManageComplaints = () => {
                 <p className="text-xs sm:text-sm text-gray-500">Title</p>
                 <p className="font-medium text-sm sm:text-base">{selectedComplaint.title}</p>
               </div>
+
+              <div>
+                <p className="text-xs sm:text-sm text-gray-500">Description</p>
+                <p className="text-sm text-gray-700 mt-1">{selectedComplaint.description}</p>
+              </div>
+
+              {/* Images in Modal */}
+              {(selectedComplaint.image_url || selectedComplaint.image_url_2 || selectedComplaint.image_url_3) && (
+                <div>
+                  <p className="text-xs sm:text-sm text-gray-500 mb-2">Attached Images</p>
+                  <div className="flex flex-wrap gap-2">
+                    {[selectedComplaint.image_url, selectedComplaint.image_url_2, selectedComplaint.image_url_3]
+                      .filter(Boolean)
+                      .map((url, index) => (
+                        <a
+                          key={index}
+                          href={url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="relative group"
+                        >
+                          <img
+                            src={url}
+                            alt={`Evidence ${index + 1}`}
+                            className="w-24 h-24 sm:w-28 sm:h-28 object-cover rounded-lg border-2 border-gray-200 hover:border-gov-blue transition-colors"
+                          />
+                          <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 rounded-lg flex items-center justify-center transition-all">
+                            <FiExternalLink className="text-white opacity-0 group-hover:opacity-100" size={18} />
+                          </div>
+                        </a>
+                      ))}
+                  </div>
+                </div>
+              )}
 
               <div>
                 <label className="block text-xs sm:text-sm font-medium text-gov-blue mb-1.5 sm:mb-2">
