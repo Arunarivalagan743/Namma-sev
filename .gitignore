@@ -1,0 +1,54 @@
+# Dependencies
+node_modules/
+
+# Environment files (SENSITIVE - DO NOT COMMIT)
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+
+# Firebase service account (SENSITIVE - DO NOT COMMIT)
+firebase-service-account.json
+*-service-account.json
+backend/firebase-service-account.json
+backend/src/config/firebase-service-account.json
+backend/src/config/google-translate-service-account.json
+
+# Google Cloud credentials (SENSITIVE - DO NOT COMMIT)
+google-translate-service-account.json
+google-*.json
+service-account*.json
+*.json.bak
+
+# Build outputs
+dist/
+build/
+.vite/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Test coverage
+coverage/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Cache
+.cache/
+.eslintcache
