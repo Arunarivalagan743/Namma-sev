@@ -86,9 +86,9 @@ const createAnnouncement = async (req, res) => {
     const announcementId = uuidv4();
 
     await pool.execute(
-      `INSERT INTO announcements (id, title, content, priority, is_active, created_by, created_at)
-       VALUES (?, ?, ?, ?, true, ?, NOW())`,
-      [announcementId, title, content, priority, req.user.id]
+      `INSERT INTO announcements (id, title, content, priority, image_url, is_active, created_by, created_at)
+       VALUES (?, ?, ?, ?, ?, true, ?, NOW())`,
+      [announcementId, title, content, priority, image_url || null, req.user.id]
     );
 
     res.status(201).json({
@@ -99,6 +99,7 @@ const createAnnouncement = async (req, res) => {
         title,
         content,
         priority,
+        image_url: image_url || null,
         createdAt: new Date()
       }
     });
@@ -135,6 +136,10 @@ const updateAnnouncement = async (req, res) => {
     if (typeof isActive === 'boolean') {
       updates.push('is_active = ?');
       values.push(isActive);
+    }
+    if (image_url !== undefined) {
+      updates.push('image_url = ?');
+      values.push(image_url || null);
     }
 
     if (updates.length === 0) {

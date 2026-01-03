@@ -666,9 +666,9 @@ const engagementController = {
       }
       
       const [result] = await pool.execute(
-        `INSERT INTO public_suggestions (user_id, title, description, category, location)
-         VALUES (?, ?, ?, ?, ?)`,
-        [userId, title, description, category || 'other', location || null]
+        `INSERT INTO public_suggestions (user_id, title, description, category, location, image_url)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        [userId, title, description, category || 'other', location || null, image_url || null]
       );
       
       res.status(201).json({
