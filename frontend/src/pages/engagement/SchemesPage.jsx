@@ -36,7 +36,7 @@ const SchemesPage = () => {
       }
       const response = await api.get(url);
       if (response.data.success) {
-        setSchemes(response.data.schemes);
+        setSchemes(response.data.data || []);
         setLastUpdated(new Date());
       }
     } catch (error) {
@@ -153,7 +153,7 @@ const SchemesPage = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
             {schemes.map((scheme, index) => (
               <div 
-                key={scheme.id} 
+                key={scheme._id || scheme.id || index} 
                 className="bg-white rounded-lg p-3 sm:p-4 transition-all duration-300 group"
               >
                 <div className="flex gap-3 sm:gap-4">

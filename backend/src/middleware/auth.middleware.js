@@ -1,5 +1,5 @@
 const { admin } = require('../config/firebase');
-const { pool } = require('../config/database');
+const { User } = require('../models');
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'panchayat.office@gmail.com';
 
@@ -24,13 +24,21 @@ const verifyToken = async (req, res, next) => {
       // Verify the Firebase ID token
       const decodedToken = await admin.auth().verifyIdToken(token);
       
-      // Get user from database
-      const [users] = await pool.execute(
-        'SELECT * FROM users WHERE firebase_uid = ?',
-        [decodedToken.uid]
-      );
+      // Get user from database - check by firebaseUid OR email
+      let user = await User.findOne({ firebaseUid: decodedToken.uid });
+      
+      // If not found by firebaseUid, try finding by email and update firebaseUid
+      if (!user && decodedToken.email) {
+        user = await User.findOne({ email: decodedToken.email });
+        if (user) {
+          // Update the firebaseUid for this user
+          user.firebaseUid = decodedToken.uid;
+          await user.save();
+          console.log(`Updated firebaseUid for user: ${decodedToken.email}`);
+        }
+      }
 
-      if (users.length === 0) {
+      if (!user) {
         // User exists in Firebase but not in our database
         req.user = {
           firebaseUid: decodedToken.uid,
@@ -40,9 +48,18 @@ const verifyToken = async (req, res, next) => {
         };
       } else {
         req.user = {
-          ...users[0],
+          id: user._id,
           firebaseUid: decodedToken.uid,
           uid: decodedToken.uid, // Alias for backwards compatibility
+          email: user.email,
+          name: user.name,
+          phone: user.phone,
+          address: user.address,
+          role: user.role,
+          status: user.status,
+          panchayat_code: user.panchayatCode,
+          created_at: user.createdAt,
+          updated_at: user.updatedAt,
           isRegistered: true
         };
       }

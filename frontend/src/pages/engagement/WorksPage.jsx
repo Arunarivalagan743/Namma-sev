@@ -35,7 +35,7 @@ const WorksPage = () => {
       }
       const response = await api.get(url);
       if (response.data.success) {
-        setWorks(response.data.works);
+        setWorks(response.data.data || []);
         setLastUpdated(new Date());
       }
     } catch (error) {
@@ -234,8 +234,8 @@ const WorksPage = () => {
           </div>
         ) : works.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-            {works.map(work => (
-              <div key={work.id} className="bg-white overflow-hidden group">
+            {works.map((work, index) => (
+              <div key={work._id || work.id || index} className="bg-white overflow-hidden group">
                 {/* Card Image */}
                 <div className="relative h-36 sm:h-48 overflow-hidden">
                   <img 

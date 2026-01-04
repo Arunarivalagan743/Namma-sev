@@ -15,61 +15,18 @@ const translateRoutes = require('./routes/translateRoutes');
 const engagementRoutes = require('./routes/engagementRoutes');
 
 // Import database connection
-const { testConnection, pool } = require('./config/database');
+const { connectDB } = require('./config/database');
 
 // Initialize express app
 const app = express();
 
 // ============ AUTO-CLEANUP SCHEDULER ============
-// Automatically delete polls and meetings 3 days after they end
+// TODO: Implement MongoDB-based cleanup for expired polls and meetings
 const scheduleCleanup = () => {
   const runCleanup = async () => {
     try {
       console.log('🧹 Running scheduled cleanup...');
-      
-      // Delete polls that ended more than 3 days ago
-      const [pollResult] = await pool.execute(`
-        DELETE FROM polls 
-        WHERE ends_at IS NOT NULL 
-        AND ends_at < DATE_SUB(NOW(), INTERVAL 3 DAY)
-      `);
-      if (pollResult.affectedRows > 0) {
-        console.log(`   ✓ Deleted ${pollResult.affectedRows} expired polls`);
-      }
-      
-      // Delete completed meetings that are more than 3 days old
-      const [meetingResult] = await pool.execute(`
-        DELETE FROM gram_sabha_meetings 
-        WHERE status = 'completed' 
-        AND meeting_date < DATE_SUB(NOW(), INTERVAL 3 DAY)
-      `);
-      if (meetingResult.affectedRows > 0) {
-        console.log(`   ✓ Deleted ${meetingResult.affectedRows} old completed meetings`);
-      }
-      
-      // Also close polls that have passed their end date
-      const [closedPolls] = await pool.execute(`
-        UPDATE polls 
-        SET status = 'closed' 
-        WHERE ends_at IS NOT NULL 
-        AND ends_at < NOW() 
-        AND status = 'active'
-      `);
-      if (closedPolls.affectedRows > 0) {
-        console.log(`   ✓ Closed ${closedPolls.affectedRows} expired active polls`);
-      }
-      
-      // Update meetings that have passed to 'completed' status
-      const [updatedMeetings] = await pool.execute(`
-        UPDATE gram_sabha_meetings 
-        SET status = 'completed' 
-        WHERE meeting_date < NOW() 
-        AND status = 'upcoming'
-      `);
-      if (updatedMeetings.affectedRows > 0) {
-        console.log(`   ✓ Marked ${updatedMeetings.affectedRows} meetings as completed`);
-      }
-      
+      // MongoDB cleanup implementation will be added here
       console.log('🧹 Cleanup completed');
     } catch (error) {
       console.error('Cleanup error:', error.message);
@@ -92,8 +49,8 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Test database connection
-testConnection();
+// Connect to MongoDB database
+connectDB();
 
 // API Routes
 app.use('/api/auth', authRoutes);

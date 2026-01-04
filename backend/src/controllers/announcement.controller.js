@@ -1,4 +1,4 @@
-const { pool } = require('../config/database');
+const { Announcement } = require('../models');
 const { v4: uuidv4 } = require('uuid');
 
 /**
@@ -8,27 +8,34 @@ const getAnnouncements = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
-    const offset = (page - 1) * limit;
+    const skip = (page - 1) * limit;
 
-    const [announcements] = await pool.query(
-      `SELECT id, title, content, priority, created_at, updated_at
-       FROM announcements 
-       WHERE is_active = true
-       ORDER BY priority DESC, created_at DESC
-       LIMIT ${limit} OFFSET ${offset}`
-    );
+    const announcements = await Announcement.find({ isActive: true })
+      .select('_id title content priority createdAt updatedAt')
+      .sort({ priority: -1, createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
 
-    const [countResult] = await pool.execute(
-      'SELECT COUNT(*) as total FROM announcements WHERE is_active = true'
-    );
+    const total = await Announcement.countDocuments({ isActive: true });
+
+    // Transform to match expected format
+    const formattedAnnouncements = announcements.map(announcement => ({
+      id: announcement._id,
+      title: announcement.title,
+      content: announcement.content,
+      priority: announcement.priority,
+      created_at: announcement.createdAt,
+      updated_at: announcement.updatedAt
+    }));
 
     res.json({
-      announcements,
+      announcements: formattedAnnouncements,
       pagination: {
         page,
         limit,
-        total: countResult[0].total,
-        totalPages: Math.ceil(countResult[0].total / limit)
+        total,
+        totalPages: Math.ceil(total / limit)
       }
     });
 
@@ -45,16 +52,25 @@ const getAnnouncement = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const [announcements] = await pool.execute(
-      'SELECT * FROM announcements WHERE id = ? AND is_active = true',
-      [id]
-    );
+    const announcement = await Announcement.findOne({ 
+      _id: id, 
+      isActive: true 
+    }).lean();
 
-    if (announcements.length === 0) {
+    if (!announcement) {
       return res.status(404).json({ error: 'Announcement not found' });
     }
 
-    res.json({ announcement: announcements[0] });
+    res.json({
+      announcement: {
+        id: announcement._id,
+        title: announcement.title,
+        content: announcement.content,
+        priority: announcement.priority,
+        created_at: announcement.createdAt,
+        updated_at: announcement.updatedAt
+      }
+    });
 
   } catch (error) {
     console.error('Get announcement error:', error);
@@ -85,11 +101,17 @@ const createAnnouncement = async (req, res) => {
 
     const announcementId = uuidv4();
 
-    await pool.execute(
-      `INSERT INTO announcements (id, title, content, priority, image_url, is_active, created_by, created_at)
-       VALUES (?, ?, ?, ?, ?, true, ?, NOW())`,
-      [announcementId, title, content, priority, image_url || null, req.user.id]
-    );
+    const newAnnouncement = new Announcement({
+      _id: announcementId,
+      title,
+      content,
+      priority,
+      imageUrl: image_url || null,
+      isActive: true,
+      createdBy: req.user.id
+    });
+
+    await newAnnouncement.save();
 
     res.status(201).json({
       success: true,
@@ -118,41 +140,19 @@ const updateAnnouncement = async (req, res) => {
     const { id } = req.params;
     const { title, content, priority, isActive, image_url } = req.body;
 
-    const updates = [];
-    const values = [];
+    const updateData = {};
 
-    if (title) {
-      updates.push('title = ?');
-      values.push(title);
-    }
-    if (content) {
-      updates.push('content = ?');
-      values.push(content);
-    }
-    if (priority) {
-      updates.push('priority = ?');
-      values.push(priority);
-    }
-    if (typeof isActive === 'boolean') {
-      updates.push('is_active = ?');
-      values.push(isActive);
-    }
-    if (image_url !== undefined) {
-      updates.push('image_url = ?');
-      values.push(image_url || null);
-    }
+    if (title) updateData.title = title;
+    if (content) updateData.content = content;
+    if (priority) updateData.priority = priority;
+    if (typeof isActive === 'boolean') updateData.isActive = isActive;
+    if (image_url !== undefined) updateData.imageUrl = image_url || null;
 
-    if (updates.length === 0) {
+    if (Object.keys(updateData).length === 0) {
       return res.status(400).json({ error: 'No update data provided' });
     }
 
-    updates.push('updated_at = NOW()');
-    values.push(id);
-
-    await pool.execute(
-      `UPDATE announcements SET ${updates.join(', ')} WHERE id = ?`,
-      values
-    );
+    await Announcement.findByIdAndUpdate(id, updateData);
 
     res.json({
       success: true,
@@ -172,10 +172,7 @@ const deleteAnnouncement = async (req, res) => {
   try {
     const { id } = req.params;
 
-    await pool.execute(
-      'UPDATE announcements SET is_active = false, updated_at = NOW() WHERE id = ?',
-      [id]
-    );
+    await Announcement.findByIdAndUpdate(id, { isActive: false });
 
     res.json({
       success: true,

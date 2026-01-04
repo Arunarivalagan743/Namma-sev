@@ -12,6 +12,22 @@ import CitizenNav from '../../components/CitizenNav';
 import TranslatedText from '../../components/TranslatedText';
 import { useTranslation } from '../../context/TranslationContext';
 
+// Translatable status labels
+const STATUS_LABELS = {
+  pending: 'Pending',
+  in_progress: 'In Progress',
+  resolved: 'Resolved',
+  rejected: 'Rejected'
+};
+
+// Translatable priority labels
+const PRIORITY_LABELS = {
+  urgent: 'Urgent',
+  high: 'High',
+  normal: 'Normal',
+  low: 'Low'
+};
+
 const MyComplaints = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -148,28 +164,28 @@ const MyComplaints = () => {
                   <FiClock className="text-gov-blue" size={20} />
                 </div>
                 <p className="text-2xl font-bold text-gov-blue">{stats.pending || 0}</p>
-                <p className="text-xs text-gray-500">Pending</p>
+                <p className="text-xs text-gray-500">{t('pending')}</p>
               </div>
               <div className="bg-white rounded-xl border border-gray-200 p-4 text-center hover:shadow-md transition-shadow hover:border-gov-blue/30">
                 <div className="w-10 h-10 rounded-full bg-gov-blue/20 flex items-center justify-center mx-auto mb-2">
                   <FiLoader className="text-gov-blue" size={20} />
                 </div>
                 <p className="text-2xl font-bold text-gov-blue">{stats.in_progress || 0}</p>
-                <p className="text-xs text-gray-500">In Progress</p>
+                <p className="text-xs text-gray-500">{t('inProgress')}</p>
               </div>
               <div className="bg-white rounded-xl border border-gray-200 p-4 text-center hover:shadow-md transition-shadow hover:border-gov-blue/30">
                 <div className="w-10 h-10 rounded-full bg-gov-blue/10 flex items-center justify-center mx-auto mb-2">
                   <FiCheckCircle className="text-gov-blue" size={20} />
                 </div>
                 <p className="text-2xl font-bold text-gov-blue">{stats.resolved || 0}</p>
-                <p className="text-xs text-gray-500">Resolved</p>
+                <p className="text-xs text-gray-500">{t('resolved')}</p>
               </div>
               <div className="bg-white rounded-xl border border-gray-200 p-4 text-center hover:shadow-md transition-shadow hover:border-gov-blue/30">
                 <div className="w-10 h-10 rounded-full bg-gov-blue/10 flex items-center justify-center mx-auto mb-2">
                   <FiFileText className="text-gov-blue" size={20} />
                 </div>
                 <p className="text-2xl font-bold text-gov-blue">{stats.total || 0}</p>
-                <p className="text-xs text-gray-500">Total</p>
+                <p className="text-xs text-gray-500">{t('totalComplaints')}</p>
               </div>
             </div>
           )}
@@ -184,7 +200,7 @@ const MyComplaints = () => {
                   type="text"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search by title, tracking ID, or category..."
+                  placeholder={t('search')}
                   className="input-field pl-10 text-sm sm:text-base"
                 />
               </div>
@@ -200,11 +216,11 @@ const MyComplaints = () => {
                   }}
                   className="input-field w-full md:w-40 text-sm sm:text-base"
                 >
-                  <option value="">All Status</option>
-                  <option value="pending">Pending</option>
-                  <option value="in_progress">In Progress</option>
-                  <option value="resolved">Resolved</option>
-                  <option value="rejected">Rejected</option>
+                  <option value="">{t('status')}</option>
+                  <option value="pending">{t('pending')}</option>
+                  <option value="in_progress">{t('inProgress')}</option>
+                  <option value="resolved">{t('resolved')}</option>
+                  <option value="rejected">{t('rejected')}</option>
                 </select>
 
                 {/* New Complaint Button */}
@@ -213,7 +229,7 @@ const MyComplaints = () => {
                   className="btn-primary flex items-center space-x-1 px-3 py-2 text-sm whitespace-nowrap"
                 >
                   <FiPlus size={16} />
-                  <span className="hidden sm:inline">New</span>
+                  <span className="hidden sm:inline">{t('fileComplaint')}</span>
                 </Link>
               </div>
             </div>
@@ -260,8 +276,8 @@ const MyComplaints = () => {
 
                   return (
                     <Link
-                      key={complaint.id}
-                      to={`/citizen/complaints/${complaint.id}`}
+                      key={complaint._id || complaint.id || complaint.tracking_id}
+                      to={`/citizen/complaints/${complaint._id || complaint.id}`}
                       className="block bg-white rounded-xl overflow-hidden group hover:shadow-xl transition-all duration-300 border border-gray-100 hover:border-gov-blue/30"
                     >
                       {/* Card Image */}
@@ -279,12 +295,12 @@ const MyComplaints = () => {
                         
                         {/* Status Badge */}
                         <span className={`absolute top-2 sm:top-3 right-2 sm:right-3 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold ${status.bgColor} ${status.textColor}`}>
-                          {status.label}
+                          <TranslatedText text={STATUS_LABELS[complaint.status] || complaint.status} />
                         </span>
                         
                         {/* Category Badge */}
                         <span className="absolute top-2 sm:top-3 left-2 sm:left-3 px-2 sm:px-3 py-0.5 sm:py-1 bg-white/90 text-gov-blue rounded-full text-[10px] sm:text-xs font-medium">
-                          {complaint.category}
+                          <TranslatedText text={complaint.category} />
                         </span>
                         
                         {/* Image Count Badge */}
@@ -305,20 +321,19 @@ const MyComplaints = () => {
                       <div className="p-3 sm:p-4">
                         {/* Title */}
                         <h3 className="text-sm sm:text-base font-semibold text-gov-blue mb-1.5 line-clamp-2 group-hover:text-gov-blue/80 transition-colors">
-                          {complaint.title}
+                          <TranslatedText text={complaint.title} />
                         </h3>
 
                         {/* Description */}
                         <p className="text-gray-500 text-xs sm:text-sm mb-2 sm:mb-3 line-clamp-2">
-                          {complaint.description?.substring(0, 80)}
-                          {complaint.description?.length > 80 ? '...' : ''}
+                          <TranslatedText text={complaint.description?.substring(0, 80) + (complaint.description?.length > 80 ? '...' : '')} />
                         </p>
 
                         {/* Priority Badge */}
                         {complaint.priority && complaint.priority !== 'normal' && (
                           <div className="mb-2">
                             <span className={`px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium border ${getPriorityColor(complaint.priority)}`}>
-                              {complaint.priority.charAt(0).toUpperCase() + complaint.priority.slice(1)} Priority
+                              <TranslatedText text={`${PRIORITY_LABELS[complaint.priority] || complaint.priority} Priority`} />
                             </span>
                           </div>
                         )}
@@ -333,7 +348,7 @@ const MyComplaints = () => {
                             {complaint.location && (
                               <div className="flex items-center">
                                 <FiMapPin size={12} className="mr-0.5 text-gov-red" />
-                                <span className="truncate max-w-[60px]">{complaint.location}</span>
+                                <span className="truncate max-w-[60px]"><TranslatedText text={complaint.location} /></span>
                               </div>
                             )}
                             {hasFeedback && (
@@ -354,7 +369,7 @@ const MyComplaints = () => {
               {pagination.totalPages > 1 && (
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white rounded-xl border border-gray-200 p-3 sm:p-4 mt-6">
                   <p className="text-xs sm:text-sm text-gray-500 text-center sm:text-left">
-                    Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total}
+                    <TranslatedText text={`Showing ${((pagination.page - 1) * pagination.limit) + 1} to ${Math.min(pagination.page * pagination.limit, pagination.total)} of ${pagination.total}`} />
                   </p>
                   <div className="flex items-center space-x-2">
                     <button
@@ -362,7 +377,7 @@ const MyComplaints = () => {
                       disabled={pagination.page === 1}
                       className="btn-outline text-xs sm:text-sm px-3 py-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Previous
+                      {t('previous')}
                     </button>
                     <span className="text-sm text-gray-600">
                       {pagination.page} / {pagination.totalPages}
@@ -372,7 +387,7 @@ const MyComplaints = () => {
                       disabled={pagination.page === pagination.totalPages}
                       className="btn-outline text-xs sm:text-sm px-3 py-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Next
+                      {t('next')}
                     </button>
                   </div>
                 </div>
@@ -383,16 +398,16 @@ const MyComplaints = () => {
               <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
                 <FiFileText size={32} className="text-gray-300" />
               </div>
-              <p className="text-lg text-gray-700 font-medium">No complaints found</p>
+              <p className="text-lg text-gray-700 font-medium">{t('noDataFound')}</p>
               <p className="text-sm text-gray-500 mt-1.5">
-                {filter ? 'Try changing the filter' : 'Submit your first complaint to get started'}
+                <TranslatedText text={filter ? 'Try changing the filter' : 'Submit your first complaint to get started'} />
               </p>
               <Link
                 to="/citizen/complaints/new"
                 className="btn-primary inline-flex items-center space-x-2 mt-4"
               >
                 <FiPlus size={18} />
-                <span>Submit Complaint</span>
+                <span>{t('fileComplaint')}</span>
               </Link>
             </div>
           )}

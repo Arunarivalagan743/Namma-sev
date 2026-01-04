@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import CitizenNav from '../../components/CitizenNav';
 import ImageUpload from '../../components/ImageUpload';
 import { useTranslation } from '../../context/TranslationContext';
+import TranslatedText from '../../components/TranslatedText';
 
 const NewComplaint = () => {
   const { t } = useTranslation();
@@ -140,8 +141,8 @@ const NewComplaint = () => {
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="text-center px-4">
             <h1 className="text-xl sm:text-2xl md:text-3xl font-serif font-bold text-white">{t('fileComplaint')}</h1>
-            <p className="text-white/80 mt-1.5 sm:mt-2 text-sm sm:text-base">திருப்பூர் பஞ்சாயத்து - Tirupur Panchayat</p>
-            <p className="text-white/60 mt-1 text-xs sm:text-sm">For Verified Residents Only</p>
+            <p className="text-white/80 mt-1.5 sm:mt-2 text-sm sm:text-base">{t('panchayatName')}</p>
+            <p className="text-white/60 mt-1 text-xs sm:text-sm"><TranslatedText text="For Verified Residents Only" /></p>
           </div>
         </div>
       </div>
@@ -154,10 +155,9 @@ const NewComplaint = () => {
             <div className="flex items-start space-x-3">
               <FiInfo className="text-gov-blue flex-shrink-0 mt-0.5" size={20} />
               <div>
-                <h4 className="font-medium text-gov-blue text-sm sm:text-base">Important Information</h4>
+                <h4 className="font-medium text-gov-blue text-sm sm:text-base"><TranslatedText text="Important Information" /></h4>
                 <p className="text-gov-blue/80 text-xs sm:text-sm mt-1">
-                  After submission, you'll receive a <strong>Tracking ID</strong> to monitor your complaint status. 
-                  Share this ID with family members to track without logging in.
+                  <TranslatedText text="After submission, you'll receive a Tracking ID to monitor your complaint status. Share this ID with family members to track without logging in." />
                 </p>
               </div>
             </div>
@@ -166,7 +166,7 @@ const NewComplaint = () => {
       {/* Form */}
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
         <div className="bg-gov-blue px-4 sm:px-6 py-3 sm:py-4">
-          <h2 className="text-white font-semibold text-base sm:text-lg">Complaint Details</h2>
+          <h2 className="text-white font-semibold text-base sm:text-lg"><TranslatedText text="Complaint Details" /></h2>
         </div>
         
         <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-5 sm:space-y-6">
@@ -176,7 +176,7 @@ const NewComplaint = () => {
             <label className="block text-sm font-medium text-gov-blue mb-2 sm:mb-3">
               <span className="flex items-center space-x-2">
                 <FiTag size={16} />
-                <span>Select Category *</span>
+                <span>{t('selectCategory')} *</span>
               </span>
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3">
@@ -194,7 +194,7 @@ const NewComplaint = () => {
                   <span className={`block mb-1 ${formData.category === cat ? 'text-gov-blue' : 'text-gray-500'}`}>
                     {getCategoryIcon(cat)}
                   </span>
-                  <span className="text-xs sm:text-sm font-medium leading-tight block">{cat}</span>
+                  <span className="text-xs sm:text-sm font-medium leading-tight block"><TranslatedText text={cat} /></span>
                 </button>
               ))}
             </div>
@@ -205,7 +205,7 @@ const NewComplaint = () => {
             <label className="block text-sm font-medium text-gov-blue mb-1.5 sm:mb-2">
               <span className="flex items-center space-x-2">
                 <FiFileText size={16} />
-                <span>Issue Title *</span>
+                <span>{t('issueTitle')} *</span>
               </span>
             </label>
             <input
@@ -213,13 +213,13 @@ const NewComplaint = () => {
               name="title"
               value={formData.title}
               onChange={handleChange}
-              placeholder="e.g., Broken street light near Gandhi Park"
+              placeholder={t('issueTitle')}
               className="input-field text-sm sm:text-base"
               maxLength={200}
               required
             />
             <div className="flex justify-between mt-1">
-              <p className="text-xs text-gray-400">Be specific (min 10 chars)</p>
+              <p className="text-xs text-gray-400"><TranslatedText text="Be specific (min 10 chars)" /></p>
               <p className="text-xs text-gray-400">{formData.title.length}/200</p>
             </div>
           </div>
@@ -229,7 +229,7 @@ const NewComplaint = () => {
             <label className="block text-sm font-medium text-gov-blue mb-2">
               <span className="flex items-center space-x-2">
                 <FiAlertCircle size={16} />
-                <span>Priority Level</span>
+                <span>{t('priority')}</span>
               </span>
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
@@ -250,8 +250,8 @@ const NewComplaint = () => {
                   <span className={`font-semibold text-xs sm:text-sm ${
                     p.value === 'urgent' || p.value === 'high' ? 'text-gov-red' : 
                     formData.priority === p.value ? 'text-gov-blue' : 'text-gray-700'
-                  }`}>{p.label}</span>
-                  <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5 hidden sm:block">{p.description}</p>
+                  }`}><TranslatedText text={p.label} /></span>
+                  <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5 hidden sm:block"><TranslatedText text={p.description} /></p>
                 </button>
               ))}
             </div>
@@ -261,7 +261,7 @@ const NewComplaint = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gov-blue mb-1.5 sm:mb-2">
-                Ward Number
+                <TranslatedText text="Ward Number" />
               </label>
               <select
                 name="wardNumber"
@@ -269,7 +269,7 @@ const NewComplaint = () => {
                 onChange={handleChange}
                 className="input-field text-sm sm:text-base"
               >
-                <option value="">Select Ward (Optional)</option>
+                <option value="">{t('selectCategory')}</option>
                 {wards.map((ward) => (
                   <option key={ward.id} value={ward.id}>{ward.name}</option>
                 ))}
@@ -279,7 +279,7 @@ const NewComplaint = () => {
               <label className="block text-sm font-medium text-gov-blue mb-1.5 sm:mb-2">
                 <span className="flex items-center space-x-2">
                   <FiPhone size={16} />
-                  <span>Alternate Contact</span>
+                  <span><TranslatedText text="Alternate Contact" /></span>
                 </span>
               </label>
               <input
@@ -287,7 +287,7 @@ const NewComplaint = () => {
                 name="contactPhone"
                 value={formData.contactPhone}
                 onChange={handleChange}
-                placeholder="Contact number (optional)"
+                placeholder={t('phoneNumber')}
                 className="input-field text-sm sm:text-base"
                 maxLength={15}
               />
@@ -299,7 +299,7 @@ const NewComplaint = () => {
             <label className="block text-sm font-medium text-gov-blue mb-1.5 sm:mb-2">
               <span className="flex items-center space-x-2">
                 <FiMapPin size={16} />
-                <span>Location / Address *</span>
+                <span>{t('location')} *</span>
               </span>
             </label>
             <input
@@ -307,33 +307,29 @@ const NewComplaint = () => {
               name="location"
               value={formData.location}
               onChange={handleChange}
-              placeholder="e.g., Near Gandhi Park, Avinashi Road, Tirupur"
+              placeholder={t('location')}
               className="input-field text-sm sm:text-base"
               maxLength={255}
               required
             />
-            <p className="text-xs text-gray-400 mt-1">Include street name, landmark, and area</p>
+            <p className="text-xs text-gray-400 mt-1"><TranslatedText text="Include street name, landmark, and area" /></p>
           </div>
 
           {/* Description */}
           <div>
             <label className="block text-sm font-medium text-gov-blue mb-1.5 sm:mb-2">
-              Detailed Description *
+              {t('detailedDescription')} *
             </label>
             <textarea
               name="description"
               value={formData.description}
               onChange={handleChange}
-              placeholder="Please provide detailed information:
-• What exactly is the problem?
-• When did you first notice it?
-• How is it affecting the community?
-• Any safety concerns?"
+              placeholder={t('detailedDescription')}
               className="input-field min-h-[140px] sm:min-h-[180px] text-sm sm:text-base"
               required
             />
             <div className="flex justify-between mt-1">
-              <p className="text-xs text-gray-400">Minimum 30 characters</p>
+              <p className="text-xs text-gray-400"><TranslatedText text="Minimum 30 characters" /></p>
               <p className="text-xs text-gray-400">{formData.description.length} chars</p>
             </div>
           </div>
@@ -343,7 +339,7 @@ const NewComplaint = () => {
             <label className="block text-sm font-medium text-gov-blue mb-2">
               <span className="flex items-center space-x-2">
                 <FiImage size={16} />
-                <span>Upload Photos (Optional)</span>
+                <span>{t('attachments')}</span>
               </span>
             </label>
             <ImageUpload 
@@ -352,7 +348,7 @@ const NewComplaint = () => {
               currentImages={formData.imageUrls}
             />
             <p className="text-xs text-gray-400 mt-2">
-              Upload up to 3 photos to help identify the issue
+              <TranslatedText text="Upload up to 3 photos to help identify the issue" />
             </p>
           </div>
 
@@ -360,13 +356,13 @@ const NewComplaint = () => {
           <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 sm:p-4">
             <h4 className="font-medium text-amber-800 mb-2 text-sm sm:text-base flex items-center space-x-2">
               <FiAlertCircle size={16} />
-              <span>Guidelines:</span>
+              <span><TranslatedText text="Guidelines" /></span>
             </h4>
             <ul className="text-xs sm:text-sm text-amber-700 space-y-1">
-              <li>• Be specific and provide accurate location details</li>
-              <li>• Upload clear photos if possible</li>
-              <li>• One complaint per issue for efficient tracking</li>
-              <li>• Use appropriate priority (urgent for safety issues)</li>
+              <li>• <TranslatedText text="Be specific and provide accurate location details" /></li>
+              <li>• <TranslatedText text="Upload clear photos if possible" /></li>
+              <li>• <TranslatedText text="One complaint per issue for efficient tracking" /></li>
+              <li>• <TranslatedText text="Use appropriate priority (urgent for safety issues)" /></li>
             </ul>
           </div>
 
@@ -378,7 +374,7 @@ const NewComplaint = () => {
               className="btn-secondary w-full sm:w-auto"
               disabled={loading}
             >
-              Cancel
+              {t('cancel')}
             </button>
             <button
               type="submit"
@@ -390,7 +386,7 @@ const NewComplaint = () => {
               ) : (
                 <>
                   <FiSend size={18} />
-                  <span>Submit Complaint</span>
+                  <span>{t('submitComplaint')}</span>
                 </>
               )}
             </button>

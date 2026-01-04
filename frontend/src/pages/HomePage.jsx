@@ -407,7 +407,7 @@ const HomePage = () => {
                   <div className="flex-1 overflow-hidden">
                     <div className="flex animate-marquee-smooth whitespace-nowrap">
                       {homeData.alerts.map((alert) => (
-                        <span key={alert.id} className="inline-flex items-center mx-8">
+                        <span key={alert._id || alert.id} className="inline-flex items-center mx-8">
                           <span className="px-2 py-0.5 bg-[#c41e3a] text-white text-xs font-medium mr-3">
                             {alert.alert_type?.toUpperCase().replace('_', ' ')}
                           </span>
@@ -543,7 +543,7 @@ const HomePage = () => {
               ) : homeData.news.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                   {homeData.news.slice(0, 3).map((news) => (
-                    <Link to={`/news/${news.id}`} key={news.id} className="group block">
+                    <Link to={`/news/${news._id || news.id}`} key={news._id || news.id} className="group block">
                       <div className="relative overflow-hidden">
                         <img 
                           src={news.image_url || 'https://images.unsplash.com/photo-1548839140-29a749e1cf4d?w=400&h=300&fit=crop'} 
@@ -673,7 +673,7 @@ const HomePage = () => {
           ) : homeData.events.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {homeData.events.slice(0, 3).map((event, index) => (
-                <div key={event.id} className="transition-all duration-300 overflow-hidden group">
+                <div key={event._id || event.id || index} className="transition-all duration-300 overflow-hidden group">
                   <div className="p-5">
                     {/* Location */}
                     <div className="flex items-center text-gray-500 text-sm mb-4">
@@ -764,7 +764,7 @@ const HomePage = () => {
               {homeData.activePoll ? (
                 <>
                   <TranslatedText text={homeData.activePoll.question} className="text-gray-600 text-xs sm:text-sm mb-2 sm:mb-3 line-clamp-2" as="p" />
-                  <p className="text-gray-500 text-xs mb-2">{homeData.activePoll.total_votes} votes so far</p>
+                  <p className="text-gray-500 text-xs mb-2">{homeData.activePoll.total_votes || 0} votes so far</p>
                   <Link to="/polls" className="inline-block bg-[#c41e3a] text-white text-xs font-medium px-3 sm:px-4 py-2 rounded hover:bg-[#a01830] transition-colors">
                     {t('vote')} {t('now')}
                   </Link>
@@ -787,7 +787,7 @@ const HomePage = () => {
               {homeData.schemes.length > 0 ? (
                 <ul className="space-y-2">
                   {homeData.schemes.slice(0, 2).map(scheme => (
-                    <li key={scheme.id} className="border-b pb-2">
+                    <li key={scheme._id || scheme.id} className="border-b pb-2">
                       <TranslatedText text={scheme.name} className="text-gray-700 text-xs sm:text-sm font-medium line-clamp-1" as="p" />
                       <p className="text-[#c41e3a] text-[10px] sm:text-xs">Deadline: {formatDate(scheme.last_date)}</p>
                     </li>
@@ -814,7 +814,7 @@ const HomePage = () => {
               {homeData.works.length > 0 ? (
                 <ul className="space-y-2">
                   {homeData.works.slice(0, 2).map(work => (
-                    <li key={work.id} className="border-b pb-2">
+                    <li key={work._id || work.id} className="border-b pb-2">
                       <TranslatedText text={work.title} className="text-gray-700 text-xs sm:text-sm font-medium line-clamp-1" as="p" />
                       <p className="text-[#c41e3a] text-[10px] sm:text-xs">{work.progress_percentage || 0}% Complete</p>
                     </li>
@@ -841,7 +841,7 @@ const HomePage = () => {
               {homeData.suggestions.length > 0 ? (
                 <ul className="space-y-2">
                   {homeData.suggestions.slice(0, 2).map(sug => (
-                    <li key={sug.id} className="border-b pb-2">
+                    <li key={sug._id || sug.id} className="border-b pb-2">
                       <TranslatedText text={sug.title} className="text-gray-700 text-xs sm:text-sm font-medium line-clamp-1" as="p" />
                       <p className="text-[#c41e3a] text-[10px] sm:text-xs">{sug.upvotes || 0} upvotes</p>
                     </li>
@@ -869,7 +869,7 @@ const HomePage = () => {
           {homeData.works.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {homeData.works.map((work, index) => (
-                <div key={work.id} className="overflow-hidden">
+                <div key={work._id || work.id} className="overflow-hidden">
                   {/* Work Image */}
                   <img 
                     src={work.image_url || `https://images.unsplash.com/photo-${index === 0 ? '1504307651254-35680f356dfd' : index === 1 ? '1590674899484-d5640e854abe' : '1621905252507-b35492cc74b4'}?w=400&h=200&fit=crop`} 
@@ -928,7 +928,7 @@ const HomePage = () => {
           {homeData.suggestions.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {homeData.suggestions.map((suggestion, index) => (
-                <div key={suggestion.id} className="bg-white overflow-hidden">
+                <div key={suggestion._id || suggestion.id} className="bg-white overflow-hidden">
                   {/* Suggestion Image */}
                   <img 
                     src={suggestion.image_url || `https://images.unsplash.com/photo-${index === 0 ? '1552664730-d307ca884978' : index === 1 ? '1517245386807-bb43f82c33c4' : '1523240795612-9a054b0db644'}?w=400&h=200&fit=crop`} 
@@ -944,7 +944,7 @@ const HomePage = () => {
                         <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
                           <path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933a4 4 0 00-.8 2.4z" />
                         </svg>
-                        {suggestion.upvotes}
+                        {suggestion.upvotes || 0}
                       </span>
                     </div>
                     <h4 className="font-semibold text-gray-800 mb-2"><TranslatedText text={suggestion.title} /></h4>

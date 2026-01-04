@@ -34,7 +34,7 @@ const FAQsPage = () => {
       }
       const response = await api.get(url);
       if (response.data.success) {
-        setFaqs(response.data.faqs);
+        setFaqs(response.data.data || []);
         setLastUpdated(new Date());
       }
     } catch (error) {

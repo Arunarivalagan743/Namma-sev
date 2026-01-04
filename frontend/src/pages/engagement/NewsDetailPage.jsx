@@ -22,7 +22,8 @@ const NewsDetailPage = () => {
     try {
       const response = await api.get(`/engagement/news`);
       if (response.data.success) {
-        const foundNews = response.data.news.find(n => n.id === parseInt(id));
+        const newsData = response.data.data || response.data.news || [];
+        const foundNews = newsData.find(n => String(n.id || n._id) === String(id));
         setNews(foundNews);
       }
     } catch (error) {
@@ -37,7 +38,8 @@ const NewsDetailPage = () => {
     try {
       const response = await api.get('/engagement/news');
       if (response.data.success) {
-        setRelatedNews(response.data.news.filter(n => n.id !== parseInt(id)).slice(0, 3));
+        const newsData = response.data.data || response.data.news || [];
+        setRelatedNews(newsData.filter(n => String(n.id || n._id) !== String(id)).slice(0, 3));
       }
     } catch (error) {
       console.error('Error fetching related news:', error);

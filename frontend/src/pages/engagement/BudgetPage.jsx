@@ -29,8 +29,12 @@ const BudgetPage = () => {
     try {
       const response = await api.get(`/engagement/budget?fiscal_year=${fiscalYear}`);
       if (response.data.success) {
-        setBudget(response.data.budget);
-        setTotals(response.data.totals);
+        const budgetData = response.data.data || [];
+        setBudget(budgetData);
+        // Calculate totals from the budget data
+        const totalAllocated = budgetData.reduce((sum, item) => sum + (item.allocatedAmount || 0), 0);
+        const totalSpent = budgetData.reduce((sum, item) => sum + (item.spentAmount || 0), 0);
+        setTotals({ total_allocated: totalAllocated, total_spent: totalSpent });
         setLastUpdated(new Date());
       }
     } catch (error) {

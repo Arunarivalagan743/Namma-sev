@@ -25,7 +25,8 @@ const EventDetailPage = () => {
     try {
       const response = await api.get(`/engagement/events`);
       if (response.data.success) {
-        const foundEvent = response.data.events.find(e => e.id === parseInt(id));
+        const eventsData = response.data.data || [];
+        const foundEvent = eventsData.find(e => (e.id === id || e._id === id || e.id === parseInt(id)));
         setEvent(foundEvent);
       }
     } catch (error) {
@@ -40,7 +41,8 @@ const EventDetailPage = () => {
     try {
       const response = await api.get('/engagement/events');
       if (response.data.success) {
-        setUpcomingEvents(response.data.events.filter(e => e.id !== parseInt(id)).slice(0, 4));
+        const eventsData = response.data.data || [];
+        setUpcomingEvents(eventsData.filter(e => (e.id !== id && e._id !== id)).slice(0, 4));
       }
     } catch (error) {
       console.error('Error fetching upcoming events:', error);

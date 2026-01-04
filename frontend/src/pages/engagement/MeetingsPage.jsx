@@ -33,7 +33,7 @@ const MeetingsPage = () => {
       }
       const response = await api.get(url);
       if (response.data.success) {
-        setMeetings(response.data.meetings);
+        setMeetings(response.data.data || []);
       }
     } catch (error) {
       console.error('Error fetching meetings:', error);
@@ -221,7 +221,7 @@ const MeetingsPage = () => {
                 const dateParts = getDateParts(meeting.meeting_date);
                 return (
                   <div 
-                    key={meeting.id} 
+                    key={meeting._id || meeting.id || index} 
                     className="flex-shrink-0 w-64 sm:w-72 h-44 sm:h-52 relative overflow-hidden group cursor-pointer snap-start"
                   >
                     {/* Background Image */}

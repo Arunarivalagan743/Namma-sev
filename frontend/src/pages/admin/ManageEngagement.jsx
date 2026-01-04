@@ -479,6 +479,24 @@ const ManageEngagement = () => {
       case 'suggestions':
         return (
           <>
+            {/* Show submitted suggestion details (read-only) */}
+            {editItem && (
+              <div className="mb-4 p-4 bg-gray-50 rounded-lg">
+                <h4 className="font-medium text-gray-700 mb-2">Suggestion Details</h4>
+                <p className="text-sm text-gray-600"><strong>Title:</strong> {editItem.title}</p>
+                <p className="text-sm text-gray-600 mt-1"><strong>From:</strong> {editItem.user_name || 'Anonymous'}</p>
+                <p className="text-sm text-gray-600 mt-1"><strong>Description:</strong> {editItem.description}</p>
+                <p className="text-sm text-gray-600 mt-1"><strong>Location:</strong> {editItem.location || 'Not specified'}</p>
+                <p className="text-sm text-gray-600 mt-1"><strong>Category:</strong> {editItem.category}</p>
+                <p className="text-sm text-gray-600 mt-1"><strong>Upvotes:</strong> {editItem.upvotes || 0}</p>
+                {editItem.image_url && (
+                  <div className="mt-2">
+                    <strong className="text-sm text-gray-600">Attached Image:</strong>
+                    <img src={editItem.image_url} alt="Suggestion" className="mt-1 max-w-xs rounded-lg border" />
+                  </div>
+                )}
+              </div>
+            )}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
               <select value={formData.status || 'pending'} onChange={(e) => setFormData({ ...formData, status: e.target.value })} className="w-full px-3 py-2 border rounded-lg">
@@ -491,7 +509,7 @@ const ManageEngagement = () => {
             </div>
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-1">Admin Remarks</label>
-              <textarea value={formData.admin_remarks || ''} onChange={(e) => setFormData({ ...formData, admin_remarks: e.target.value })} rows={3} className="w-full px-3 py-2 border rounded-lg" />
+              <textarea value={formData.admin_remarks || formData.adminRemarks || ''} onChange={(e) => setFormData({ ...formData, admin_remarks: e.target.value, adminRemarks: e.target.value })} rows={3} className="w-full px-3 py-2 border rounded-lg" placeholder="Add your remarks here..." />
             </div>
           </>
         );
@@ -565,7 +583,7 @@ const ManageEngagement = () => {
         case 'polls': return ['question', 'end_date', 'is_active'];
         case 'alerts': return ['title', 'severity', 'is_active'];
         case 'faqs': return ['question', 'category'];
-        case 'suggestions': return ['title', 'category', 'status', 'upvotes'];
+        case 'suggestions': return ['title', 'user_name', 'category', 'location', 'status', 'upvotes'];
         case 'budget': return ['name', 'allocated', 'spent'];
         default: return [];
       }

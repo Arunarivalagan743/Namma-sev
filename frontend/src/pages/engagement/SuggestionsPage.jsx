@@ -47,7 +47,7 @@ const SuggestionsPage = () => {
       }
       const response = await api.get(url);
       if (response.data.success) {
-        setSuggestions(response.data.suggestions);
+        setSuggestions(response.data.data || []);
         setUserUpvotes(response.data.userUpvotes || []);
         setLastUpdated(new Date());
       }

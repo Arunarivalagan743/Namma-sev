@@ -1,4 +1,4 @@
-const { pool } = require('../config/database');
+const { User } = require('../models');
 const { v4: uuidv4 } = require('uuid');
 const { ADMIN_EMAIL } = require('../middleware/auth.middleware');
 
@@ -20,60 +20,59 @@ const register = async (req, res) => {
       });
     }
 
-    // Check if user already exists
-    const [existingUsers] = await pool.execute(
-      'SELECT id, firebase_uid, email FROM users WHERE firebase_uid = ? OR email = ?',
-      [firebaseUid, email]
-    );
-
-    if (existingUsers.length > 0) {
-      const existingUser = existingUsers[0];
-      
-      // If same Firebase UID, user is already fully registered
-      if (existingUser.firebase_uid === firebaseUid) {
-        console.log(`User registration conflict - Firebase UID already exists: ${firebaseUid}`);
-        return res.status(409).json({ 
-          error: 'Conflict',
-          message: 'User already registered',
-          conflictType: 'firebase_uid'
-        });
-      }
-      
-      // If same email but different Firebase UID, update the existing record
-      if (existingUser.email === email && existingUser.firebase_uid !== firebaseUid) {
-        console.log(`Updating existing user record with new Firebase UID - Email: ${email}, Old UID: ${existingUser.firebase_uid}, New UID: ${firebaseUid}`);
-        
-        try {
-          await pool.execute(
-            'UPDATE users SET firebase_uid = ?, updated_at = NOW() WHERE email = ?',
-            [firebaseUid, email]
-          );
-          
-          // Return the updated user info
-          const [updatedUser] = await pool.execute(
-            'SELECT * FROM users WHERE email = ?',
-            [email]
-          );
-          
-          return res.status(200).json({
-            success: true,
-            message: 'Account linked successfully',
-            user: {
-              id: updatedUser[0].id,
-              email: updatedUser[0].email,
-              name: updatedUser[0].name,
-              role: updatedUser[0].role,
-              status: updatedUser[0].status,
-              panchayatCode: updatedUser[0].panchayat_code
-            }
-          });
-        } catch (updateError) {
-          console.error('Failed to update user Firebase UID:', updateError);
-          return res.status(500).json({
-            error: 'Update Failed',
-            message: 'Failed to link account'
-          });
+    // Check if user already exists by firebaseUid first
+    let existingUser = await User.findOne({ firebaseUid: firebaseUid });
+    
+    if (existingUser) {
+      // User already registered with this Firebase UID - return success with existing user
+      console.log(`User already registered with Firebase UID: ${firebaseUid}`);
+      return res.status(200).json({
+        success: true,
+        message: 'User already registered',
+        user: {
+          id: existingUser._id,
+          email: existingUser.email,
+          name: existingUser.name,
+          role: existingUser.role,
+          status: existingUser.status,
+          panchayatCode: existingUser.panchayatCode
         }
+      });
+    }
+
+    // Check if user exists with same email but different firebaseUid
+    existingUser = await User.findOne({ email: email });
+
+    if (existingUser) {
+      // Update the existing record with new Firebase UID
+      console.log(`Updating existing user record with new Firebase UID - Email: ${email}`);
+      
+      try {
+        existingUser.firebaseUid = firebaseUid;
+        existingUser.name = name;
+        existingUser.phone = phone;
+        existingUser.address = address;
+        if (aadhaarLast4) existingUser.aadhaarLast4 = aadhaarLast4;
+        await existingUser.save();
+        
+        return res.status(200).json({
+          success: true,
+          message: 'Account linked successfully',
+          user: {
+            id: existingUser._id,
+            email: existingUser.email,
+            name: existingUser.name,
+            role: existingUser.role,
+            status: existingUser.status,
+            panchayatCode: existingUser.panchayatCode
+          }
+        });
+      } catch (updateError) {
+        console.error('Failed to update user Firebase UID:', updateError);
+        return res.status(500).json({
+          error: 'Update Failed',
+          message: 'Failed to link account'
+        });
       }
     }
 
@@ -81,13 +80,21 @@ const register = async (req, res) => {
     const role = email === ADMIN_EMAIL ? 'admin' : 'citizen';
     const status = role === 'admin' ? 'approved' : 'pending';
 
-    // Insert new user
-    const userId = uuidv4();
-    await pool.execute(
-      `INSERT INTO users (id, firebase_uid, email, name, phone, address, aadhaar_last4, panchayat_code, role, status, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
-      [userId, firebaseUid, email, name, phone, address, aadhaarLast4 || null, PANCHAYAT_CODE, role, status]
-    );
+    // Create new user
+    const newUser = new User({
+      _id: uuidv4(),
+      firebaseUid,
+      email,
+      name,
+      phone,
+      address,
+      aadhaarLast4: aadhaarLast4 || null,
+      panchayatCode: PANCHAYAT_CODE,
+      role,
+      status
+    });
+
+    await newUser.save();
 
     res.status(201).json({
       success: true,
@@ -95,7 +102,7 @@ const register = async (req, res) => {
         ? 'Admin account created successfully' 
         : 'Registration submitted. Pending admin approval.',
       user: {
-        id: userId,
+        id: newUser._id,
         email,
         name,
         role,

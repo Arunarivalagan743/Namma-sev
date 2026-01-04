@@ -14,8 +14,19 @@ import {
   FiExternalLink
 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
+import { useTranslation } from '../../context/TranslationContext';
+import TranslatedText from '../../components/TranslatedText';
+
+// Translatable status labels
+const STATUS_LABELS = {
+  pending: 'Pending',
+  in_progress: 'In Progress',
+  resolved: 'Resolved',
+  rejected: 'Rejected'
+};
 
 const ManageComplaints = () => {
+  const { t } = useTranslation();
   const [complaints, setComplaints] = useState([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('');
@@ -98,15 +109,9 @@ const ManageComplaints = () => {
       resolved: 'status-resolved',
       rejected: 'status-rejected'
     };
-    const labels = {
-      pending: 'Pending',
-      in_progress: 'In Progress',
-      resolved: 'Resolved',
-      rejected: 'Rejected'
-    };
     return (
       <span className={styles[status] || 'status-pending'}>
-        {labels[status] || status}
+        <TranslatedText text={STATUS_LABELS[status] || status} />
       </span>
     );
   };

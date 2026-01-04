@@ -30,7 +30,7 @@ const PollsPage = () => {
     try {
       const response = await api.get('/engagement/polls');
       if (response.data.success) {
-        setPolls(response.data.polls);
+        setPolls(response.data.data || []);
         setLastUpdated(new Date());
       }
     } catch (error) {
@@ -176,8 +176,8 @@ const PollsPage = () => {
           </div>
         ) : polls.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            {polls.map(poll => (
-              <div key={poll.id} className="bg-white rounded-xl transition-all duration-500 ease-out p-4 sm:p-6">
+            {polls.map((poll, index) => (
+              <div key={poll._id || poll.id || index} className="bg-white rounded-xl transition-all duration-500 ease-out p-4 sm:p-6">
                 {/* Poll Question */}
                 <div className="mb-4 sm:mb-5">
                   <TranslatedText text={poll.question} className="text-[#1e3a5f] font-semibold leading-relaxed text-sm sm:text-base" as="p" />

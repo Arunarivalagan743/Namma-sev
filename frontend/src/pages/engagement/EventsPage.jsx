@@ -30,7 +30,7 @@ const EventsPage = () => {
       }
       const response = await api.get(url);
       if (response.data.success) {
-        setEvents(response.data.events);
+        setEvents(response.data.data || []);
       }
     } catch (error) {
       console.error('Error fetching events:', error);
@@ -161,7 +161,7 @@ const EventsPage = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-8">
             {events.slice(currentPage * 4, (currentPage + 1) * 4).map((event, index) => (
               <div 
-                key={event.id} 
+                key={event._id || event.id || index} 
                 className="bg-white rounded-xl transition-all duration-300 overflow-hidden group"
               >
                 <div className="p-4 sm:p-5">

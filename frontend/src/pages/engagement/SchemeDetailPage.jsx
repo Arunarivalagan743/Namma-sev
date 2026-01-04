@@ -24,7 +24,8 @@ const SchemeDetailPage = () => {
     try {
       const response = await api.get(`/engagement/schemes`);
       if (response.data.success) {
-        const foundScheme = response.data.schemes.find(s => s.id === parseInt(id));
+        const schemes = response.data.data || [];
+        const foundScheme = schemes.find(s => s._id === id || s.id === parseInt(id));
         setScheme(foundScheme);
       }
     } catch (error) {
@@ -39,7 +40,8 @@ const SchemeDetailPage = () => {
     try {
       const response = await api.get('/engagement/schemes');
       if (response.data.success) {
-        setRelatedSchemes(response.data.schemes.filter(s => s.id !== parseInt(id)).slice(0, 4));
+        const schemes = response.data.data || [];
+        setRelatedSchemes(schemes.filter(s => (s._id || s.id) !== id).slice(0, 4));
       }
     } catch (error) {
       console.error('Error fetching related schemes:', error);

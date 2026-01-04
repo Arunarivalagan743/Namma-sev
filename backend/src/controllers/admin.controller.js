@@ -1,4 +1,4 @@
-const { pool } = require('../config/database');
+const { User, Complaint, ComplaintHistory } = require('../models');
 
 /**
  * Get dashboard statistics
@@ -6,47 +6,84 @@ const { pool } = require('../config/database');
 const getDashboardStats = async (req, res) => {
   try {
     // Get user stats
-    const [userStats] = await pool.execute(`
-      SELECT 
-        COUNT(*) as total_users,
-        SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending_users,
-        SUM(CASE WHEN status = 'approved' THEN 1 ELSE 0 END) as approved_users
-      FROM users WHERE role = 'citizen'
-    `);
+    const userStatsAgg = await User.aggregate([
+      { $match: { role: 'citizen' } },
+      {
+        $group: {
+          _id: null,
+          total_users: { $sum: 1 },
+          pending_users: { $sum: { $cond: [{ $eq: ['$status', 'pending'] }, 1, 0] } },
+          approved_users: { $sum: { $cond: [{ $eq: ['$status', 'approved'] }, 1, 0] } }
+        }
+      }
+    ]);
+
+    const userStats = userStatsAgg[0] || {
+      total_users: 0,
+      pending_users: 0,
+      approved_users: 0
+    };
 
     // Get complaint stats
-    const [complaintStats] = await pool.execute(`
-      SELECT 
-        COUNT(*) as total_complaints,
-        SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending_complaints,
-        SUM(CASE WHEN status = 'in_progress' THEN 1 ELSE 0 END) as in_progress_complaints,
-        SUM(CASE WHEN status = 'resolved' THEN 1 ELSE 0 END) as resolved_complaints
-      FROM complaints
-    `);
+    const complaintStatsAgg = await Complaint.aggregate([
+      {
+        $group: {
+          _id: null,
+          total_complaints: { $sum: 1 },
+          pending_complaints: { $sum: { $cond: [{ $eq: ['$status', 'pending'] }, 1, 0] } },
+          in_progress_complaints: { $sum: { $cond: [{ $eq: ['$status', 'in_progress'] }, 1, 0] } },
+          resolved_complaints: { $sum: { $cond: [{ $eq: ['$status', 'resolved'] }, 1, 0] } }
+        }
+      }
+    ]);
 
-    // Get recent complaints
-    const [recentComplaints] = await pool.execute(`
-      SELECT c.id, c.tracking_id, c.title, c.category, c.status, c.created_at,
-             u.name as user_name
-      FROM complaints c
-      JOIN users u ON c.user_id = u.id
-      ORDER BY c.created_at DESC
-      LIMIT 5
-    `);
+    const complaintStats = complaintStatsAgg[0] || {
+      total_complaints: 0,
+      pending_complaints: 0,
+      in_progress_complaints: 0,
+      resolved_complaints: 0
+    };
+
+    // Get recent complaints with user details
+    const recentComplaints = await Complaint.find()
+      .populate('userId', 'name')
+      .select('_id trackingId title category status createdAt')
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .lean();
+
+    // Transform to match expected format
+    const formattedComplaints = recentComplaints.map(complaint => ({
+      id: complaint._id,
+      tracking_id: complaint.trackingId,
+      title: complaint.title,
+      category: complaint.category,
+      status: complaint.status,
+      created_at: complaint.createdAt,
+      user_name: complaint.userId?.name || 'Unknown User'
+    }));
 
     // Get category distribution
-    const [categoryStats] = await pool.execute(`
-      SELECT category, COUNT(*) as count
-      FROM complaints
-      GROUP BY category
-      ORDER BY count DESC
-    `);
+    const categoryStats = await Complaint.aggregate([
+      {
+        $group: {
+          _id: '$category',
+          count: { $sum: 1 }
+        }
+      },
+      { $sort: { count: -1 } }
+    ]);
+
+    const formattedCategoryStats = categoryStats.map(stat => ({
+      category: stat._id,
+      count: stat.count
+    }));
 
     res.json({
-      users: userStats[0],
-      complaints: complaintStats[0],
-      recentComplaints,
-      categoryDistribution: categoryStats
+      users: userStats,
+      complaints: complaintStats,
+      recentComplaints: formattedComplaints,
+      categoryDistribution: formattedCategoryStats
     });
 
   } catch (error) {
@@ -63,36 +100,41 @@ const getAllUsers = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
     const status = req.query.status;
-    const offset = (page - 1) * limit;
+    const skip = (page - 1) * limit;
 
-    let query = `
-      SELECT id, email, name, phone, address, aadhaar_last4, status, created_at
-      FROM users 
-      WHERE role = 'citizen'
-    `;
-    const params = [];
-
+    let filter = { role: 'citizen' };
     if (status) {
-      query += ' AND status = ?';
-      params.push(status);
+      filter.status = status;
     }
 
-    query += ` ORDER BY created_at DESC LIMIT ${limit} OFFSET ${offset}`;
+    const users = await User.find(filter)
+      .select('_id email name phone address aadhaarLast4 status createdAt')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
 
-    const [users] = await pool.query(query, params);
+    const total = await User.countDocuments({ role: 'citizen' });
 
-    const [countResult] = await pool.execute(
-      'SELECT COUNT(*) as total FROM users WHERE role = ?',
-      ['citizen']
-    );
+    // Transform to match expected format
+    const formattedUsers = users.map(user => ({
+      id: user._id,
+      email: user.email,
+      name: user.name,
+      phone: user.phone,
+      address: user.address,
+      aadhaar_last4: user.aadhaarLast4,
+      status: user.status,
+      created_at: user.createdAt
+    }));
 
     res.json({
-      users,
+      users: formattedUsers,
       pagination: {
         page,
         limit,
-        total: countResult[0].total,
-        totalPages: Math.ceil(countResult[0].total / limit)
+        total,
+        totalPages: Math.ceil(total / limit)
       }
     });
 
@@ -107,14 +149,26 @@ const getAllUsers = async (req, res) => {
  */
 const getPendingUsers = async (req, res) => {
   try {
-    const [users] = await pool.execute(`
-      SELECT id, email, name, phone, address, aadhaar_last4, created_at
-      FROM users 
-      WHERE role = 'citizen' AND status = 'pending'
-      ORDER BY created_at ASC
-    `);
+    const users = await User.find({ 
+      role: 'citizen', 
+      status: 'pending' 
+    })
+      .select('_id email name phone address aadhaarLast4 createdAt')
+      .sort({ createdAt: -1 })
+      .lean();
 
-    res.json({ users, count: users.length });
+    // Transform to match expected format
+    const formattedUsers = users.map(user => ({
+      id: user._id,
+      email: user.email,
+      name: user.name,
+      phone: user.phone,
+      address: user.address,
+      aadhaar_last4: user.aadhaarLast4,
+      created_at: user.createdAt
+    }));
+
+    res.json({ users: formattedUsers, count: formattedUsers.length });
 
   } catch (error) {
     console.error('Get pending users error:', error);
@@ -129,12 +183,13 @@ const approveUser = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const [result] = await pool.execute(
-      `UPDATE users SET status = 'approved', updated_at = NOW() WHERE id = ? AND status = 'pending'`,
-      [id]
+    const result = await User.findOneAndUpdate(
+      { _id: id, status: 'pending' },
+      { status: 'approved' },
+      { new: true }
     );
 
-    if (result.affectedRows === 0) {
+    if (!result) {
       return res.status(404).json({ error: 'User not found or already processed' });
     }
 
@@ -157,13 +212,16 @@ const rejectUser = async (req, res) => {
     const { id } = req.params;
     const { reason } = req.body;
 
-    const [result] = await pool.execute(
-      `UPDATE users SET status = 'rejected', rejection_reason = ?, updated_at = NOW() 
-       WHERE id = ? AND status = 'pending'`,
-      [reason || null, id]
+    const result = await User.findOneAndUpdate(
+      { _id: id, status: 'pending' },
+      { 
+        status: 'rejected',
+        rejectionReason: reason || null
+      },
+      { new: true }
     );
 
-    if (result.affectedRows === 0) {
+    if (!result) {
       return res.status(404).json({ error: 'User not found or already processed' });
     }
 
@@ -187,39 +245,51 @@ const getAllComplaints = async (req, res) => {
     const limit = parseInt(req.query.limit) || 20;
     const status = req.query.status;
     const category = req.query.category;
-    const offset = (page - 1) * limit;
+    const skip = (page - 1) * limit;
 
-    let query = `
-      SELECT c.*, u.name as user_name, u.email as user_email, u.phone as user_phone
-      FROM complaints c
-      JOIN users u ON c.user_id = u.id
-      WHERE 1=1
-    `;
-    const params = [];
-
+    let filter = {};
+    
     if (status) {
-      query += ' AND c.status = ?';
-      params.push(status);
+      filter.status = status;
     }
 
     if (category) {
-      query += ' AND c.category = ?';
-      params.push(category);
+      filter.category = category;
     }
 
-    query += ` ORDER BY c.created_at DESC LIMIT ${limit} OFFSET ${offset}`;
+    const complaints = await Complaint.find(filter)
+      .populate('userId', 'name email phone')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
 
-    const [complaints] = await pool.query(query, params);
+    const total = await Complaint.countDocuments(filter);
 
-    const [countResult] = await pool.execute('SELECT COUNT(*) as total FROM complaints');
+    // Transform to match expected format
+    const formattedComplaints = complaints.map(complaint => ({
+      ...complaint,
+      id: complaint._id,
+      user_name: complaint.userId?.name || 'Unknown',
+      user_email: complaint.userId?.email || '',
+      user_phone: complaint.userId?.phone || '',
+      user_id: complaint.userId?._id || complaint.userId,
+      tracking_id: complaint.trackingId,
+      admin_remarks: complaint.adminRemarks,
+      image_url: complaint.imageUrl,
+      image_url_2: complaint.imageUrl2,
+      image_url_3: complaint.imageUrl3,
+      created_at: complaint.createdAt,
+      updated_at: complaint.updatedAt
+    }));
 
     res.json({
-      complaints,
+      complaints: formattedComplaints,
       pagination: {
         page,
         limit,
-        total: countResult[0].total,
-        totalPages: Math.ceil(countResult[0].total / limit)
+        total,
+        totalPages: Math.ceil(total / limit)
       }
     });
 
@@ -246,17 +316,20 @@ const updateComplaintStatus = async (req, res) => {
     }
 
     // Update complaint
-    await pool.execute(
-      `UPDATE complaints SET status = ?, admin_remarks = ?, updated_at = NOW() WHERE id = ?`,
-      [status, remarks || null, id]
-    );
+    await Complaint.findByIdAndUpdate(id, {
+      status,
+      adminRemarks: remarks || null
+    });
 
     // Add to history
-    await pool.execute(
-      `INSERT INTO complaint_history (id, complaint_id, status, remarks, created_at)
-       VALUES (UUID(), ?, ?, ?, NOW())`,
-      [id, status, remarks || null]
-    );
+    const historyEntry = new ComplaintHistory({
+      _id: require('uuid').v4(),
+      complaintId: id,
+      status,
+      remarks: remarks || null
+    });
+
+    await historyEntry.save();
 
     res.json({
       success: true,
@@ -275,41 +348,99 @@ const updateComplaintStatus = async (req, res) => {
 const getComplaintAnalytics = async (req, res) => {
   try {
     // Status distribution
-    const [statusDist] = await pool.execute(`
-      SELECT status, COUNT(*) as count
-      FROM complaints
-      GROUP BY status
-    `);
+    const statusDist = await Complaint.aggregate([
+      {
+        $group: {
+          _id: '$status',
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $project: {
+          status: '$_id',
+          count: 1,
+          _id: 0
+        }
+      }
+    ]);
 
     // Category distribution
-    const [categoryDist] = await pool.execute(`
-      SELECT category, COUNT(*) as count
-      FROM complaints
-      GROUP BY category
-      ORDER BY count DESC
-    `);
+    const categoryDist = await Complaint.aggregate([
+      {
+        $group: {
+          _id: '$category',
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $project: {
+          category: '$_id',
+          count: 1,
+          _id: 0
+        }
+      },
+      { $sort: { count: -1 } }
+    ]);
 
     // Monthly trend (last 6 months)
-    const [monthlyTrend] = await pool.execute(`
-      SELECT 
-        DATE_FORMAT(created_at, '%Y-%m') as month,
-        COUNT(*) as count
-      FROM complaints
-      WHERE created_at >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
-      GROUP BY DATE_FORMAT(created_at, '%Y-%m')
-      ORDER BY month ASC
-    `);
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+    const monthlyTrend = await Complaint.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: sixMonthsAgo }
+        }
+      },
+      {
+        $group: {
+          _id: {
+            year: { $year: '$createdAt' },
+            month: { $month: '$createdAt' }
+          },
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $project: {
+          month: {
+            $concat: [
+              { $toString: '$_id.year' },
+              '-',
+              {
+                $cond: {
+                  if: { $lt: ['$_id.month', 10] },
+                  then: { $concat: ['0', { $toString: '$_id.month' }] },
+                  else: { $toString: '$_id.month' }
+                }
+              }
+            ]
+          },
+          count: 1,
+          _id: 0
+        }
+      },
+      { $sort: { month: 1 } }
+    ]);
 
     // Resolution rate
-    const [resolutionRate] = await pool.execute(`
-      SELECT 
-        COUNT(*) as total,
-        SUM(CASE WHEN status = 'resolved' THEN 1 ELSE 0 END) as resolved
-      FROM complaints
-    `);
+    const resolutionStats = await Complaint.aggregate([
+      {
+        $group: {
+          _id: null,
+          total: { $sum: 1 },
+          resolved: {
+            $sum: {
+              $cond: [{ $eq: ['$status', 'resolved'] }, 1, 0]
+            }
+          }
+        }
+      }
+    ]);
 
-    const rate = resolutionRate[0].total > 0 
-      ? (resolutionRate[0].resolved / resolutionRate[0].total * 100).toFixed(1)
+    const resolutionData = resolutionStats[0] || { total: 0, resolved: 0 };
+    const rate = resolutionData.total > 0 
+      ? (resolutionData.resolved / resolutionData.total * 100).toFixed(1)
       : 0;
 
     res.json({
@@ -317,8 +448,8 @@ const getComplaintAnalytics = async (req, res) => {
       categoryDistribution: categoryDist,
       monthlyTrend,
       resolutionRate: {
-        total: resolutionRate[0].total,
-        resolved: resolutionRate[0].resolved,
+        total: resolutionData.total,
+        resolved: resolutionData.resolved,
         percentage: rate
       }
     });

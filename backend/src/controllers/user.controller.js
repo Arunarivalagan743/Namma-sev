@@ -1,4 +1,4 @@
-const { pool } = require('../config/database');
+const { User } = require('../models');
 
 /**
  * Get user profile
@@ -7,17 +7,30 @@ const getProfile = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    const [users] = await pool.execute(
-      `SELECT id, email, name, phone, address, aadhaar_last4, panchayat_code, role, status, created_at, updated_at
-       FROM users WHERE id = ?`,
-      [userId]
-    );
+    const user = await User.findById(userId)
+      .select('_id email name phone address aadhaarLast4 panchayatCode role status createdAt updatedAt')
+      .lean();
 
-    if (users.length === 0) {
+    if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    res.json({ user: users[0] });
+    // Transform to match expected format
+    const formattedUser = {
+      id: user._id,
+      email: user.email,
+      name: user.name,
+      phone: user.phone,
+      address: user.address,
+      aadhaar_last4: user.aadhaarLast4,
+      panchayat_code: user.panchayatCode,
+      role: user.role,
+      status: user.status,
+      created_at: user.createdAt,
+      updated_at: user.updatedAt
+    };
+
+    res.json({ user: formattedUser });
 
   } catch (error) {
     console.error('Get profile error:', error);
@@ -40,41 +53,33 @@ const updateProfile = async (req, res) => {
       });
     }
 
-    // Build update query dynamically
-    const updates = [];
-    const values = [];
+    // Build update object
+    const updateData = {};
+    if (name) updateData.name = name;
+    if (phone) updateData.phone = phone;
+    if (address) updateData.address = address;
 
-    if (name) {
-      updates.push('name = ?');
-      values.push(name);
-    }
-    if (phone) {
-      updates.push('phone = ?');
-      values.push(phone);
-    }
-    if (address) {
-      updates.push('address = ?');
-      values.push(address);
-    }
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      updateData,
+      { new: true }
+    ).select('_id email name phone address role status').lean();
 
-    updates.push('updated_at = NOW()');
-    values.push(userId);
-
-    await pool.execute(
-      `UPDATE users SET ${updates.join(', ')} WHERE id = ?`,
-      values
-    );
-
-    // Get updated user
-    const [users] = await pool.execute(
-      'SELECT id, email, name, phone, address, role, status FROM users WHERE id = ?',
-      [userId]
-    );
+    // Transform to match expected format
+    const formattedUser = {
+      id: updatedUser._id,
+      email: updatedUser.email,
+      name: updatedUser.name,
+      phone: updatedUser.phone,
+      address: updatedUser.address,
+      role: updatedUser.role,
+      status: updatedUser.status
+    };
 
     res.json({
       success: true,
       message: 'Profile updated successfully',
-      user: users[0]
+      user: formattedUser
     });
 
   } catch (error) {

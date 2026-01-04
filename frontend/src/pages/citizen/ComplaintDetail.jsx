@@ -8,8 +8,27 @@ import {
 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import CitizenNav from '../../components/CitizenNav';
+import { useTranslation } from '../../context/TranslationContext';
+import TranslatedText from '../../components/TranslatedText';
+
+// Translatable status labels
+const STATUS_LABELS = {
+  pending: 'Pending',
+  in_progress: 'In Progress',
+  resolved: 'Resolved',
+  rejected: 'Rejected'
+};
+
+// Translatable priority labels
+const PRIORITY_LABELS = {
+  urgent: 'Urgent',
+  high: 'High',
+  normal: 'Normal',
+  low: 'Low'
+};
 
 const ComplaintDetail = () => {
+  const { t } = useTranslation();
   const { id } = useParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -105,10 +124,9 @@ const ComplaintDetail = () => {
       high: 'bg-gov-red/10 text-gov-red',
       urgent: 'bg-gov-red/20 text-gov-red'
     };
-    const labels = { low: 'Low', normal: 'Normal', high: 'High', urgent: 'Urgent' };
     return (
       <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${styles[priority] || styles.normal}`}>
-        {labels[priority] || priority}
+        <TranslatedText text={PRIORITY_LABELS[priority] || priority} />
       </span>
     );
   };
@@ -129,9 +147,9 @@ const ComplaintDetail = () => {
       <div className="min-h-screen bg-gray-50">
         <CitizenNav />
         <div className="container mx-auto px-4 py-8 text-center">
-          <p className="text-gray-500">Complaint not found</p>
+          <p className="text-gray-500">{t('noDataFound')}</p>
           <button onClick={() => navigate('/my-complaints')} className="btn-primary mt-4">
-            Back to My Complaints
+            {t('back')} {t('myComplaints')}
           </button>
         </div>
       </div>
@@ -158,9 +176,9 @@ const ComplaintDetail = () => {
               className="flex items-center text-white/80 hover:text-white mb-2 transition-colors"
             >
               <FiArrowLeft className="mr-2" />
-              Back to My Complaints
+              <TranslatedText text="Back to My Complaints" />
             </button>
-            <h1 className="text-xl sm:text-2xl font-bold text-white">Complaint Details</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-white"><TranslatedText text="Complaint Details" /></h1>
           </div>
         </div>
       </div>
@@ -180,14 +198,14 @@ const ComplaintDetail = () => {
                 <div className="flex items-center space-x-3">
                   {getStatusIcon(complaint.status)}
                   <div>
-                    <p className="text-sm text-gray-600">Current Status</p>
+                    <p className="text-sm text-gray-600">{t('status')}</p>
                     <p className={`font-bold text-lg ${currentStatus.textColor}`}>
-                      {currentStatus.label}
+                      <TranslatedText text={STATUS_LABELS[complaint.status] || currentStatus.label} />
                     </p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-xs text-gray-500">Tracking ID</p>
+                  <p className="text-xs text-gray-500">{t('trackingId')}</p>
                   <p className="font-mono font-bold text-gov-blue">{complaint.tracking_id}</p>
                 </div>
               </div>
@@ -195,13 +213,13 @@ const ComplaintDetail = () => {
               {complaint.daysSinceCreation !== undefined && (
                 <div className="mt-4 pt-4 border-t border-gray-200">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">Days since submission:</span>
-                    <span className="font-semibold">{complaint.daysSinceCreation} days</span>
+                    <span className="text-gray-600"><TranslatedText text="Days since submission" /></span>
+                    <span className="font-semibold">{complaint.daysSinceCreation} <TranslatedText text="days" /></span>
                   </div>
                   {complaint.estimated_resolution_days && (
                     <div className="flex items-center justify-between text-sm mt-1">
-                      <span className="text-gray-600">Expected resolution:</span>
-                      <span className="font-semibold">{complaint.estimated_resolution_days} days</span>
+                      <span className="text-gray-600"><TranslatedText text="Expected resolution" /></span>
+                      <span className="font-semibold">{complaint.estimated_resolution_days} <TranslatedText text="days" /></span>
                     </div>
                   )}
                 </div>
@@ -211,7 +229,7 @@ const ComplaintDetail = () => {
             {/* Complaint Details Card */}
             <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
               <div className="bg-gov-blue px-4 sm:px-6 py-3">
-                <h2 className="text-white font-semibold">Complaint Information</h2>
+                <h2 className="text-white font-semibold"><TranslatedText text="Complaint Information" /></h2>
               </div>
               
               <div className="p-4 sm:p-6 space-y-4">
@@ -220,11 +238,11 @@ const ComplaintDetail = () => {
                   <div className="flex items-center gap-2 flex-wrap mb-2">
                     <span className="text-gov-blue">{getCategoryIcon(complaint.category)}</span>
                     <span className="bg-gov-blue/10 text-gov-blue px-3 py-1 rounded-full text-sm font-medium">
-                      {complaint.category}
+                      <TranslatedText text={complaint.category} />
                     </span>
                     {complaint.priority && getPriorityBadge(complaint.priority)}
                   </div>
-                  <h3 className="text-lg sm:text-xl font-semibold text-gov-blue">{complaint.title}</h3>
+                  <h3 className="text-lg sm:text-xl font-semibold text-gov-blue"><TranslatedText text={complaint.title} /></h3>
                 </div>
 
                 {/* Location */}
@@ -232,22 +250,22 @@ const ComplaintDetail = () => {
                   <div className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
                     <FiMapPin className="text-gov-blue flex-shrink-0 mt-0.5" size={18} />
                     <div>
-                      <p className="text-xs text-gray-500 uppercase tracking-wide">Location</p>
-                      <p className="text-gray-800">{complaint.location}</p>
+                      <p className="text-xs text-gray-500 uppercase tracking-wide">{t('location')}</p>
+                      <p className="text-gray-800"><TranslatedText text={complaint.location} /></p>
                     </div>
                   </div>
                 )}
 
                 {/* Description */}
                 <div>
-                  <p className="text-xs text-gray-500 uppercase tracking-wide mb-2">Description</p>
-                  <p className="text-gray-700 whitespace-pre-wrap">{complaint.description}</p>
+                  <p className="text-xs text-gray-500 uppercase tracking-wide mb-2">{t('description')}</p>
+                  <p className="text-gray-700 whitespace-pre-wrap"><TranslatedText text={complaint.description} /></p>
                 </div>
 
                 {/* Images */}
                 {(complaint.image_url || complaint.image_url_2 || complaint.image_url_3) && (
                   <div>
-                    <p className="text-xs text-gray-500 uppercase tracking-wide mb-2">Attached Photos</p>
+                    <p className="text-xs text-gray-500 uppercase tracking-wide mb-2"><TranslatedText text="Attached Photos" /></p>
                     <div className="grid grid-cols-3 gap-2">
                       {[complaint.image_url, complaint.image_url_2, complaint.image_url_3]
                         .filter(Boolean)
@@ -268,9 +286,9 @@ const ComplaintDetail = () => {
                 {complaint.admin_remarks && (
                   <div className="p-4 bg-gov-blue/5 rounded-lg border border-gov-blue/20">
                     <p className="text-xs text-gov-blue uppercase tracking-wide mb-1 font-medium">
-                      Admin Remarks
+                      <TranslatedText text="Admin Remarks" />
                     </p>
-                    <p className="text-gov-blue/80">{complaint.admin_remarks}</p>
+                    <p className="text-gov-blue/80"><TranslatedText text={complaint.admin_remarks} /></p>
                   </div>
                 )}
 
@@ -278,12 +296,12 @@ const ComplaintDetail = () => {
                 <div className="flex flex-wrap gap-4 text-sm text-gray-500 pt-4 border-t">
                   <div className="flex items-center space-x-1">
                     <FiClock size={14} />
-                    <span>Submitted: {formatDate(complaint.created_at)}</span>
+                    <span><TranslatedText text="Submitted" />: {formatDate(complaint.created_at)}</span>
                   </div>
                   {complaint.updated_at && complaint.updated_at !== complaint.created_at && (
                     <div className="flex items-center space-x-1">
                       <FiClock size={14} />
-                      <span>Updated: {formatDate(complaint.updated_at)}</span>
+                      <span><TranslatedText text="Updated" />: {formatDate(complaint.updated_at)}</span>
                     </div>
                   )}
                 </div>
@@ -295,7 +313,7 @@ const ComplaintDetail = () => {
               <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
                 <h3 className="font-semibold text-gov-blue mb-4 flex items-center space-x-2">
                   <FiStar size={18} />
-                  <span>Your Feedback</span>
+                  <span><TranslatedText text="Your Feedback" /></span>
                 </h3>
                 
                 {feedback ? (
@@ -310,16 +328,16 @@ const ComplaintDetail = () => {
                       ))}
                     </div>
                     {feedback.feedback_text && (
-                      <p className="text-gray-700">{feedback.feedback_text}</p>
+                      <p className="text-gray-700"><TranslatedText text={feedback.feedback_text} /></p>
                     )}
                     <p className="text-xs text-gray-500 mt-2">
-                      Submitted on {formatDate(feedback.submitted_at)}
+                      <TranslatedText text="Submitted on" /> {formatDate(feedback.submitted_at)}
                     </p>
                   </div>
                 ) : showFeedbackForm ? (
                   <div className="space-y-4">
                     <div>
-                      <p className="text-sm text-gray-600 mb-2">Rate your experience:</p>
+                      <p className="text-sm text-gray-600 mb-2"><TranslatedText text="Rate your experience" /></p>
                       <div className="flex items-center space-x-2">
                         {[1, 2, 3, 4, 5].map((star) => (
                           <button
@@ -344,7 +362,7 @@ const ComplaintDetail = () => {
                       <textarea
                         value={feedbackData.feedbackText}
                         onChange={(e) => setFeedbackData(prev => ({ ...prev, feedbackText: e.target.value }))}
-                        placeholder="Share your experience (optional)"
+                        placeholder={t('description')}
                         className="input-field min-h-[80px]"
                       />
                     </div>
@@ -353,14 +371,14 @@ const ComplaintDetail = () => {
                         onClick={() => setShowFeedbackForm(false)}
                         className="btn-secondary text-sm"
                       >
-                        Cancel
+                        {t('cancel')}
                       </button>
                       <button
                         onClick={handleSubmitFeedback}
                         disabled={submittingFeedback || feedbackData.rating === 0}
                         className="btn-primary text-sm disabled:opacity-50"
                       >
-                        {submittingFeedback ? 'Submitting...' : 'Submit Feedback'}
+                        {submittingFeedback ? t('loading') : t('submit')}
                       </button>
                     </div>
                   </div>
@@ -370,7 +388,7 @@ const ComplaintDetail = () => {
                     className="btn-primary"
                   >
                     <FiStar className="mr-2" />
-                    Rate Resolution
+                    <TranslatedText text="Rate Resolution" />
                   </button>
                 )}
               </div>
@@ -381,7 +399,7 @@ const ComplaintDetail = () => {
           <div className="lg:col-span-1">
             <div className="bg-white rounded-xl border border-gray-200 overflow-hidden sticky top-4">
               <div className="bg-gov-blue px-4 py-3">
-                <h2 className="text-white font-semibold">Status Timeline</h2>
+                <h2 className="text-white font-semibold"><TranslatedText text="Status Timeline" /></h2>
               </div>
               
               <div className="p-4">
@@ -407,10 +425,10 @@ const ComplaintDetail = () => {
                             {/* Content */}
                             <div className="ml-4 flex-1">
                               <p className={`font-medium ${isLatest ? itemStatus.textColor : 'text-gray-700'}`}>
-                                {itemStatus.label}
+                                <TranslatedText text={STATUS_LABELS[item.status] || itemStatus.label} />
                               </p>
                               {item.remarks && (
-                                <p className="text-sm text-gray-600 mt-1">{item.remarks}</p>
+                                <p className="text-sm text-gray-600 mt-1"><TranslatedText text={item.remarks} /></p>
                               )}
                               <p className="text-xs text-gray-400 mt-1">
                                 {formatDate(item.created_at)}
@@ -424,7 +442,7 @@ const ComplaintDetail = () => {
                 ) : (
                   <div className="text-center py-8 text-gray-500">
                     <FiClock size={32} className="mx-auto mb-2 text-gray-300" />
-                    <p>No timeline available</p>
+                    <p><TranslatedText text="No timeline available" /></p>
                   </div>
                 )}
               </div>

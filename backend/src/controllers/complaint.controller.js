@@ -1,4 +1,4 @@
-const { pool } = require('../config/database');
+const { Complaint, ComplaintHistory, User } = require('../models');
 const { v4: uuidv4 } = require('uuid');
 
 const COMPLAINT_CATEGORIES = [
@@ -94,39 +94,36 @@ const createComplaint = async (req, res) => {
       imageUrls[2] || null
     ];
 
-    // Try with new columns, fallback to basic insert
-    try {
-      await pool.execute(
-        `INSERT INTO complaints (
-          id, tracking_id, user_id, title, description, category, priority,
-          location, image_url, image_url_2, image_url_3, contact_phone, ward_number,
-          estimated_resolution_days, status, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', NOW())`,
-        [
-          complaintId, trackingId, userId, title, description, category, priority,
-          location || null, imageUrl1, imageUrl2, imageUrl3, contactPhone || null, wardNumber || null,
-          estimatedDays
-        ]
-      );
-    } catch (insertError) {
-      // Fallback to basic insert if new columns don't exist yet
-      await pool.execute(
-        `INSERT INTO complaints (id, tracking_id, user_id, title, description, category, location, status, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', NOW())`,
-        [complaintId, trackingId, userId, title, description, category, location || null]
-      );
-    }
+    // Create new complaint
+    const newComplaint = new Complaint({
+      _id: complaintId,
+      trackingId,
+      userId,
+      title,
+      description,
+      category,
+      priority,
+      location: location || null,
+      imageUrl: imageUrl1,
+      imageUrl2: imageUrl2,
+      imageUrl3: imageUrl3,
+      contactPhone: contactPhone || null,
+      wardNumber: wardNumber || null,
+      estimatedResolutionDays: estimatedDays,
+      status: 'pending'
+    });
+
+    await newComplaint.save();
 
     // Create initial history entry
-    try {
-      await pool.execute(
-        `INSERT INTO complaint_history (id, complaint_id, status, remarks, created_at)
-         VALUES (?, ?, 'pending', 'Complaint submitted successfully', NOW())`,
-        [uuidv4(), complaintId]
-      );
-    } catch (historyError) {
-      console.log('History insert skipped:', historyError.message);
-    }
+    const historyEntry = new ComplaintHistory({
+      _id: uuidv4(),
+      complaintId,
+      status: 'pending',
+      remarks: 'Complaint submitted successfully'
+    });
+
+    await historyEntry.save();
 
     res.status(201).json({
       success: true,
@@ -159,61 +156,74 @@ const getUserComplaints = async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const status = req.query.status;
     const priority = req.query.priority;
-    const offset = (page - 1) * limit;
+    const skip = (page - 1) * limit;
 
-    let query = `
-      SELECT * 
-      FROM complaints 
-      WHERE user_id = ?
-    `;
-    const params = [userId];
+    let filter = { userId };
 
     if (status) {
-      query += ' AND status = ?';
-      params.push(status);
+      filter.status = status;
     }
 
     if (priority) {
-      query += ' AND priority = ?';
-      params.push(priority);
+      filter.priority = priority;
     }
 
-    query += ` ORDER BY created_at DESC LIMIT ${limit} OFFSET ${offset}`;
+    // Get complaints with pagination
+    const complaints = await Complaint.find(filter)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
 
-    const [complaints] = await pool.query(query, params);
+    // Transform complaints to include 'id' field and snake_case for frontend
+    const transformedComplaints = complaints.map(c => ({
+      ...c,
+      id: c._id,
+      tracking_id: c.trackingId,
+      image_url: c.imageUrl,
+      image_url_2: c.imageUrl2,
+      image_url_3: c.imageUrl3,
+      created_at: c.createdAt,
+      updated_at: c.updatedAt,
+      admin_remarks: c.adminRemarks,
+      contact_phone: c.contactPhone,
+      ward_number: c.wardNumber
+    }));
 
     // Get total count
-    let countQuery = 'SELECT COUNT(*) as total FROM complaints WHERE user_id = ?';
-    const countParams = [userId];
-    if (status) {
-      countQuery += ' AND status = ?';
-      countParams.push(status);
-    }
-    if (priority) {
-      countQuery += ' AND priority = ?';
-      countParams.push(priority);
-    }
-    const [countResult] = await pool.execute(countQuery, countParams);
+    const total = await Complaint.countDocuments(filter);
 
     // Get summary stats for user
-    const [stats] = await pool.execute(`
-      SELECT 
-        COUNT(*) as total,
-        SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
-        SUM(CASE WHEN status = 'in_progress' THEN 1 ELSE 0 END) as in_progress,
-        SUM(CASE WHEN status = 'resolved' THEN 1 ELSE 0 END) as resolved,
-        SUM(CASE WHEN status = 'rejected' THEN 1 ELSE 0 END) as rejected
-      FROM complaints WHERE user_id = ?
-    `, [userId]);
+    const statsAggregation = await Complaint.aggregate([
+      { $match: { userId } },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: 1 },
+          pending: { $sum: { $cond: [{ $eq: ['$status', 'pending'] }, 1, 0] } },
+          in_progress: { $sum: { $cond: [{ $eq: ['$status', 'in_progress'] }, 1, 0] } },
+          resolved: { $sum: { $cond: [{ $eq: ['$status', 'resolved'] }, 1, 0] } },
+          rejected: { $sum: { $cond: [{ $eq: ['$status', 'rejected'] }, 1, 0] } }
+        }
+      }
+    ]);
+
+    const stats = statsAggregation[0] || {
+      total: 0,
+      pending: 0,
+      in_progress: 0,
+      resolved: 0,
+      rejected: 0
+    };
 
     res.json({
-      complaints,
-      stats: stats[0],
+      complaints: transformedComplaints,
+      stats,
       pagination: {
         page,
         limit,
-        total: countResult[0].total,
-        totalPages: Math.ceil(countResult[0].total / limit)
+        total,
+        totalPages: Math.ceil(total / limit)
       }
     });
 
@@ -231,39 +241,50 @@ const getComplaint = async (req, res) => {
     const userId = req.user.id;
     const { id } = req.params;
 
-    const [complaints] = await pool.execute(
-      `SELECT c.*, u.name as user_name, u.phone as user_phone
-       FROM complaints c
-       JOIN users u ON c.user_id = u.id
-       WHERE c.id = ? AND c.user_id = ?`,
-      [id, userId]
-    );
+    // Get complaint with user details - try both _id match and check userId
+    const complaint = await Complaint.findOne({ _id: id, userId }).lean();
 
-    if (complaints.length === 0) {
+    if (!complaint) {
       return res.status(404).json({ error: 'Complaint not found' });
     }
 
-    // Get status history/timeline
-    const [history] = await pool.execute(
-      `SELECT id, status, remarks, created_at 
-       FROM complaint_history 
-       WHERE complaint_id = ? 
-       ORDER BY created_at ASC`,
-      [id]
-    );
+    // Get user details
+    const user = await User.findById(userId).lean();
 
-    // Calculate days since creation
-    const complaint = complaints[0];
-    const createdAt = new Date(complaint.created_at);
-    const now = new Date();
-    const daysSinceCreation = Math.floor((now - createdAt) / (1000 * 60 * 60 * 24));
+    // Get status history/timeline
+    const history = await ComplaintHistory.find({ complaintId: id })
+      .sort({ createdAt: 1 })
+      .lean();
+
+    // Transform complaint with proper field names
+    const complaintWithUser = {
+      ...complaint,
+      id: complaint._id,
+      tracking_id: complaint.trackingId,
+      image_url: complaint.imageUrl,
+      image_url_2: complaint.imageUrl2,
+      image_url_3: complaint.imageUrl3,
+      created_at: complaint.createdAt,
+      updated_at: complaint.updatedAt,
+      admin_remarks: complaint.adminRemarks,
+      contact_phone: complaint.contactPhone,
+      ward_number: complaint.wardNumber,
+      user_name: user?.name || 'Unknown',
+      user_phone: user?.phone || ''
+    };
+
+    // Transform history to timeline with proper field names
+    const transformedTimeline = history.map(h => ({
+      ...h,
+      id: h._id,
+      created_at: h.createdAt,
+      updated_by: h.updatedBy
+    }));
 
     res.json({
-      complaint: {
-        ...complaint,
-        daysSinceCreation
-      },
-      timeline: history
+      complaint: complaintWithUser,
+      timeline: transformedTimeline, // Frontend expects 'timeline'
+      history: transformedTimeline  // Keep for backward compatibility
     });
 
   } catch (error) {
@@ -283,16 +304,11 @@ const trackComplaint = async (req, res) => {
       return res.status(400).json({ error: 'Tracking ID is required' });
     }
 
-    const [complaints] = await pool.execute(
-      `SELECT 
-        tracking_id, title, category, status, location,
-        created_at, updated_at
-       FROM complaints 
-       WHERE tracking_id = ?`,
-      [trackingId.toUpperCase()]
-    );
+    const complaint = await Complaint.findOne({ 
+      trackingId: trackingId.toUpperCase() 
+    }).lean();
 
-    if (complaints.length === 0) {
+    if (!complaint) {
       return res.status(404).json({ 
         error: 'Complaint not found',
         message: 'No complaint found with this tracking ID. Please check the ID and try again.'
@@ -300,16 +316,14 @@ const trackComplaint = async (req, res) => {
     }
 
     // Get timeline (limited info for public view)
-    const [history] = await pool.execute(
-      `SELECT status, remarks, created_at 
-       FROM complaint_history 
-       WHERE complaint_id = (SELECT id FROM complaints WHERE tracking_id = ?)
-       ORDER BY created_at ASC`,
-      [trackingId.toUpperCase()]
-    );
+    const history = await ComplaintHistory.find({ 
+      complaintId: complaint._id 
+    })
+      .select('status remarks createdAt updatedBy')
+      .sort({ createdAt: 1 })
+      .lean();
 
-    const complaint = complaints[0];
-    const createdAt = new Date(complaint.created_at);
+    const createdAt = new Date(complaint.createdAt);
     const now = new Date();
     const daysSinceCreation = Math.floor((now - createdAt) / (1000 * 60 * 60 * 24));
 
@@ -330,13 +344,32 @@ const trackComplaint = async (req, res) => {
         break;
     }
 
+    // Transform complaint with proper field names
+    const transformedComplaint = {
+      ...complaint,
+      id: complaint._id,
+      tracking_id: complaint.trackingId,
+      image_url: complaint.imageUrl,
+      image_url_2: complaint.imageUrl2,
+      image_url_3: complaint.imageUrl3,
+      created_at: complaint.createdAt,
+      updated_at: complaint.updatedAt,
+      admin_remarks: complaint.adminRemarks,
+      daysSinceCreation,
+      statusMessage
+    };
+
+    // Transform timeline with proper field names
+    const transformedTimeline = history.map(h => ({
+      ...h,
+      id: h._id,
+      created_at: h.createdAt,
+      updated_by: h.updatedBy
+    }));
+
     res.json({
-      complaint: {
-        ...complaint,
-        daysSinceCreation,
-        statusMessage
-      },
-      timeline: history
+      complaint: transformedComplaint,
+      timeline: transformedTimeline
     });
 
   } catch (error) {
@@ -359,18 +392,24 @@ const submitFeedback = async (req, res) => {
     }
 
     // Check if complaint exists and is resolved
-    const [complaints] = await pool.execute(
-      `SELECT id, status FROM complaints WHERE id = ? AND user_id = ?`,
-      [id, userId]
-    );
+    const complaint = await Complaint.findOne({ _id: id, userId });
 
-    if (complaints.length === 0) {
+    if (!complaint) {
       return res.status(404).json({ error: 'Complaint not found' });
     }
 
-    if (complaints[0].status !== 'resolved') {
+    if (complaint.status !== 'resolved') {
       return res.status(400).json({ error: 'Feedback can only be submitted for resolved complaints' });
     }
+
+    // Update complaint with feedback
+    await Complaint.findByIdAndUpdate(id, {
+      feedback: {
+        rating,
+        comment: feedbackText,
+        submittedAt: new Date()
+      }
+    });
 
     res.json({
       success: true,
