@@ -80,12 +80,7 @@ const PendingApproval = () => {
             <FiLogOut size={18} />
             <span>{t('logout')}</span>
           </button>
-          <Link 
-            to="/" 
-            className="block text-gov-blue hover:underline text-xs sm:text-sm"
-          >
-            Return to Home
-          </Link>
+        
         </div>
       </div>
     </div>
