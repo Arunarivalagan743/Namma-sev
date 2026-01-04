@@ -20,9 +20,6 @@ const { connectDB } = require('./config/database');
 // Initialize express app
 const app = express();
 
-// Track database connection state for serverless
-let isDbConnected = false;
-
 // ============ AUTO-CLEANUP SCHEDULER ============
 // TODO: Implement MongoDB-based cleanup for expired polls and meetings
 const scheduleCleanup = () => {
@@ -74,18 +71,18 @@ app.options('*', cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Database connection middleware for serverless
-app.use(async (req, res, next) => {
-  if (!isDbConnected) {
-    try {
-      await connectDB();
-      isDbConnected = true;
-    } catch (error) {
-      console.error('Database connection error:', error);
-      return res.status(500).json({ error: 'Database connection failed' });
-    }
+// Database connection middleware for serverless - ensure connection before any API route
+app.use('/api', async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (error) {
+    console.error('Database connection error:', error.message);
+    return res.status(500).json({ 
+      error: 'Database connection failed',
+      message: error.message 
+    });
   }
-  next();
 });
 
 // API Routes

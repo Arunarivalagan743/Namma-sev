@@ -4,39 +4,47 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 // MongoDB connection string
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://arunarivalagan774:arunarivalagan774@cluster0.jxg7dt3.mongodb.net/';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://arunarivalagan774:arunarivalagan774@cluster0.jxg7dt3.mongodb.net/namsev?retryWrites=true&w=majority';
 
-// Track connection state for serverless
-let isConnected = false;
+// Cached connection for serverless
+let cached = global.mongoose;
+
+if (!cached) {
+  cached = global.mongoose = { conn: null, promise: null };
+}
 
 // Connect to MongoDB
 const connectDB = async () => {
-  // If already connected, return
-  if (isConnected && mongoose.connection.readyState === 1) {
-    console.log('✅ Using existing MongoDB connection');
-    return mongoose.connection;
+  // If already connected, return existing connection
+  if (cached.conn) {
+    console.log('✅ Using cached MongoDB connection');
+    return cached.conn;
+  }
+
+  // If connection is in progress, wait for it
+  if (!cached.promise) {
+    const opts = {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      serverSelectionTimeoutMS: 10000,
+      socketTimeoutMS: 45000,
+      maxPoolSize: 10,
+    };
+
+    cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
+      console.log('✅ MongoDB Database connected successfully');
+      return mongoose;
+    });
   }
 
   try {
-    // Set mongoose options for serverless
-    mongoose.set('bufferCommands', false);
-    
-    const conn = await mongoose.connect(MONGODB_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-      serverSelectionTimeoutMS: 10000, // 10 second timeout
-      socketTimeoutMS: 45000, // 45 second timeout
-    });
-    
-    isConnected = true;
-    console.log('✅ MongoDB Database connected successfully');
-    console.log(`Connected to: ${conn.connection.host}`);
-    
-    return conn;
+    cached.conn = await cached.promise;
+    console.log(`Connected to: ${cached.conn.connection.host}`);
+    return cached.conn;
   } catch (error) {
-    isConnected = false;
+    cached.promise = null;
     console.error('❌ Database connection failed:', error.message);
-    throw error; // Throw instead of process.exit for serverless
+    throw error;
   }
 };
 
