@@ -39,6 +39,12 @@ export const adminService = {
     return response.data;
   },
 
+  // Toggle complaint public visibility
+  toggleComplaintVisibility: async (complaintId, isPublic) => {
+    const response = await api.patch(`/admin/complaints/${complaintId}/visibility`, { isPublic });
+    return response.data;
+  },
+
   // Analytics
   getComplaintAnalytics: async () => {
     const response = await api.get('/admin/complaints/analytics');

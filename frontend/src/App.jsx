@@ -39,6 +39,7 @@ import Profile from './pages/citizen/Profile';
 
 // Public Pages
 import TrackComplaint from './pages/public/TrackComplaint';
+import PublicComplaints from './pages/public/PublicComplaints';
 
 // Admin Pages
 import AdminDashboard from './pages/admin/Dashboard';
@@ -99,6 +100,7 @@ function App() {
           {/* Public Complaint Tracking */}
           <Route path="/track" element={<TrackComplaint />} />
           <Route path="/track/:trackingId" element={<TrackComplaint />} />
+          <Route path="/public-complaints" element={<PublicComplaints />} />
 
           {/* Citizen Protected Routes - Pages have their own CitizenNav */}
           <Route element={<ProtectedRoute />}>

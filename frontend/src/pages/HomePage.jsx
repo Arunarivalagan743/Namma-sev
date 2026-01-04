@@ -9,7 +9,7 @@ import api from '../services/api';
 import { 
   FiPlay, FiMapPin, FiMail, FiChevronDown, FiMenu, FiX, 
   FiHome, FiUsers, FiBookOpen, FiCalendar, FiGrid, 
-  FiPieChart, FiList, FiFileText, FiHelpCircle, FiLogIn, FiLogOut
+  FiPieChart, FiList, FiFileText, FiHelpCircle, FiLogIn, FiLogOut, FiEye
 } from 'react-icons/fi';
 
 const HomePage = () => {
@@ -236,6 +236,14 @@ const HomePage = () => {
             >
               <FiFileText size={20} className="flex-shrink-0" />
               <span className="mobile-menu-text font-medium">News</span>
+            </Link>
+            <Link
+              to="/public-complaints"
+              onClick={() => setMobileMenuOpen(false)}
+              className="mobile-menu-item flex items-center space-x-3 px-4 py-3 text-white hover:bg-white/10 rounded-lg transition-colors"
+            >
+              <FiEye size={20} className="flex-shrink-0" />
+              <span className="mobile-menu-text font-medium">Public Complaints</span>
             </Link>
             <Link
               to="/faqs"
@@ -1005,7 +1013,10 @@ const HomePage = () => {
               <h3 className="text-lg font-semibold text-gray-800">{t('panchayatName')}</h3>
               <p className="text-gray-500 text-sm">{t('address')}</p>
             </div>
-            <div className="mt-4 md:mt-0 flex gap-3">
+            <div className="mt-4 md:mt-0 flex flex-wrap gap-3">
+              <Link to="/public-complaints" className="bg-white border border-[#1e3a5f] text-[#1e3a5f] px-5 py-2 text-sm font-medium hover:bg-[#1e3a5f] hover:text-white transition-colors">
+                VIEW PUBLIC COMPLAINTS
+              </Link>
               {isLoggedIn ? (
                 <>
                   <Link to="/my-complaints" className="bg-white border border-gray-300 text-gray-600 px-5 py-2 text-sm font-medium hover:bg-gray-50 transition-colors">

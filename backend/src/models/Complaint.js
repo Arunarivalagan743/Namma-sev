@@ -79,6 +79,11 @@ const complaintSchema = new mongoose.Schema({
     type: String,
     maxLength: 10
   },
+  isPublic: {
+    type: Boolean,
+    default: false,
+    index: true
+  },
   estimatedResolutionDays: {
     type: Number,
     default: 10

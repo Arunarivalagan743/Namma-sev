@@ -18,6 +18,7 @@ router.put('/users/:id/reject', adminController.rejectUser);
 // Complaint management
 router.get('/complaints', adminController.getAllComplaints);
 router.put('/complaints/:id/status', adminController.updateComplaintStatus);
+router.patch('/complaints/:id/visibility', adminController.toggleComplaintVisibility);
 router.get('/complaints/analytics', adminController.getComplaintAnalytics);
 
 module.exports = router;

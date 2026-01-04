@@ -460,6 +460,45 @@ const getComplaintAnalytics = async (req, res) => {
   }
 };
 
+/**
+ * Toggle complaint public visibility (Admin)
+ * NOTE: Admin can only make private complaints public, NOT the other way
+ * Once a complaint is public, it stays public for transparency
+ */
+const toggleComplaintVisibility = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { isPublic } = req.body;
+
+    const complaint = await Complaint.findById(id);
+
+    if (!complaint) {
+      return res.status(404).json({ error: 'Complaint not found' });
+    }
+
+    // TRANSPARENCY RULE: If complaint is already public, admin cannot make it private
+    if (complaint.isPublic && isPublic === false) {
+      return res.status(403).json({ 
+        success: false,
+        error: 'Cannot hide a public complaint. Once public, complaints remain visible for transparency.' 
+      });
+    }
+
+    complaint.isPublic = isPublic;
+    await complaint.save();
+
+    res.json({
+      success: true,
+      message: isPublic ? 'Complaint is now public' : 'Complaint is now private',
+      isPublic: complaint.isPublic
+    });
+
+  } catch (error) {
+    console.error('Toggle visibility error:', error);
+    res.status(500).json({ error: 'Failed to update visibility' });
+  }
+};
+
 module.exports = {
   getDashboardStats,
   getAllUsers,
@@ -468,5 +507,6 @@ module.exports = {
   rejectUser,
   getAllComplaints,
   updateComplaintStatus,
-  getComplaintAnalytics
+  getComplaintAnalytics,
+  toggleComplaintVisibility
 };

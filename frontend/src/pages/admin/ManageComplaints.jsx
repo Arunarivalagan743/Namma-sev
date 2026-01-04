@@ -11,7 +11,9 @@ import {
   FiEdit2,
   FiX,
   FiImage,
-  FiExternalLink
+  FiExternalLink,
+  FiEye,
+  FiEyeOff
 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { useTranslation } from '../../context/TranslationContext';
@@ -99,6 +101,17 @@ const ManageComplaints = () => {
       toast.error('Failed to update status');
     } finally {
       setUpdating(false);
+    }
+  };
+
+  const handleToggleVisibility = async (complaintId, currentVisibility) => {
+    try {
+      await adminService.toggleComplaintVisibility(complaintId, !currentVisibility);
+      toast.success(currentVisibility ? 'Complaint hidden from public' : 'Complaint made public');
+      fetchComplaints();
+    } catch (error) {
+      console.error('Error toggling visibility:', error);
+      toast.error('Failed to toggle visibility');
     }
   };
 
@@ -276,6 +289,28 @@ const ManageComplaints = () => {
 
                   <div className="flex items-center space-x-2 sm:space-x-3 ml-6 sm:ml-8 lg:ml-0">
                     {getStatusBadge(complaint.status)}
+                    {/* Visibility Toggle - Can only make public, not private (transparency) */}
+                    {complaint.is_public ? (
+                      // Public complaints show locked badge - cannot be made private
+                      <div
+                        className="flex items-center space-x-1 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded bg-green-100 text-green-700 text-xs sm:text-sm cursor-not-allowed"
+                        title="Public complaints cannot be hidden - Transparency policy"
+                      >
+                        <FiEye size={12} />
+                        <span className="hidden sm:inline">Public</span>
+                        <span className="text-[10px] ml-1">🔒</span>
+                      </div>
+                    ) : (
+                      // Private complaints can be made public
+                      <button
+                        onClick={() => handleToggleVisibility(complaint.id, complaint.is_public)}
+                        className="flex items-center space-x-1 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded bg-gray-100 text-gray-600 hover:bg-green-100 hover:text-green-700 transition-colors text-xs sm:text-sm"
+                        title="Click to make public"
+                      >
+                        <FiEyeOff size={12} />
+                        <span className="hidden sm:inline">Private</span>
+                      </button>
+                    )}
                     <button
                       onClick={() => {
                         setSelectedComplaint(complaint);

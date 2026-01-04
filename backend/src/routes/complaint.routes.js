@@ -8,6 +8,9 @@ const { verifyToken, requireApprovedUser } = require('../middleware/auth.middlew
 // Track complaint by tracking ID (no auth required)
 router.get('/track/:trackingId', complaintController.trackComplaint);
 
+// Get public complaints with timelines (no auth required)
+router.get('/public', complaintController.getPublicComplaints);
+
 // Get wards list (no auth required)
 router.get('/wards', complaintController.getWards);
 
@@ -32,5 +35,8 @@ router.get('/:id', verifyToken, requireApprovedUser, complaintController.getComp
 
 // Submit feedback for resolved complaint
 router.post('/:id/feedback', verifyToken, requireApprovedUser, complaintController.submitFeedback);
+
+// Toggle complaint public visibility
+router.patch('/:id/visibility', verifyToken, requireApprovedUser, complaintController.toggleComplaintVisibility);
 
 module.exports = router;

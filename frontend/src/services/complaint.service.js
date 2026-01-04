@@ -117,7 +117,19 @@ export const complaintService = {
     'Encroachment': 'encroachment',
     'Noise Pollution': 'noise',
     'Other': 'other'
-  })
+  }),
+
+  // Get public complaints with timelines (no auth required)
+  getPublicComplaints: async (params = {}) => {
+    const response = await api.get('/complaints/public', { params });
+    return response.data;
+  },
+
+  // Toggle complaint visibility
+  toggleVisibility: async (id, isPublic) => {
+    const response = await api.patch(`/complaints/${id}/visibility`, { isPublic });
+    return response.data;
+  }
 };
 
 export default complaintService;

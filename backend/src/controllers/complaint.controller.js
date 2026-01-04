@@ -43,7 +43,8 @@ const createComplaint = async (req, res) => {
       priority = 'normal',
       imageUrls = [],
       contactPhone,
-      wardNumber
+      wardNumber,
+      isPublic = false
     } = req.body;
 
     // Debug logging
@@ -109,6 +110,7 @@ const createComplaint = async (req, res) => {
       imageUrl3: imageUrl3,
       contactPhone: contactPhone || null,
       wardNumber: wardNumber || null,
+      isPublic: isPublic || false,
       estimatedResolutionDays: estimatedDays,
       status: 'pending'
     });
@@ -450,6 +452,141 @@ const getWards = async (req, res) => {
   }
 };
 
+/**
+ * Get public complaints with timeline (PUBLIC - no auth required)
+ * Shows resolved complaints that users have made public to build trust
+ */
+const getPublicComplaints = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const category = req.query.category;
+    const status = req.query.status;
+    const skip = (page - 1) * limit;
+
+    // Build filter - only show public complaints
+    let filter = { isPublic: true };
+    
+    if (category) {
+      filter.category = category;
+    }
+    
+    // By default show resolved, but allow filtering
+    if (status) {
+      filter.status = status;
+    }
+
+    const complaints = await Complaint.find(filter)
+      .populate('userId', 'name')
+      .select('trackingId title description category location status priority wardNumber imageUrl imageUrl2 imageUrl3 createdAt updatedAt resolvedAt adminRemarks feedback isPublic')
+      .sort({ resolvedAt: -1, updatedAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
+    const total = await Complaint.countDocuments(filter);
+
+    // Get timelines for all complaints
+    const complaintsWithTimelines = await Promise.all(
+      complaints.map(async (complaint) => {
+        const history = await ComplaintHistory.find({ complaintId: complaint._id })
+          .select('status remarks createdAt updatedBy')
+          .sort({ createdAt: 1 })
+          .lean();
+
+        return {
+          id: complaint._id,
+          trackingId: complaint.trackingId,
+          title: complaint.title,
+          description: complaint.description,
+          category: complaint.category,
+          location: complaint.location,
+          status: complaint.status,
+          priority: complaint.priority,
+          wardNumber: complaint.wardNumber,
+          imageUrl: complaint.imageUrl,
+          imageUrl2: complaint.imageUrl2,
+          imageUrl3: complaint.imageUrl3,
+          userName: complaint.userId?.name || 'Anonymous Citizen',
+          createdAt: complaint.createdAt,
+          updatedAt: complaint.updatedAt,
+          resolvedAt: complaint.resolvedAt,
+          adminRemarks: complaint.adminRemarks,
+          feedback: complaint.feedback,
+          timeline: history.map(h => ({
+            id: h._id,
+            status: h.status,
+            remarks: h.remarks,
+            createdAt: h.createdAt,
+            updatedBy: h.updatedBy
+          }))
+        };
+      })
+    );
+
+    // Get statistics for public complaints
+    const stats = await Complaint.aggregate([
+      { $match: { isPublic: true } },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: 1 },
+          resolved: { $sum: { $cond: [{ $eq: ['$status', 'resolved'] }, 1, 0] } },
+          inProgress: { $sum: { $cond: [{ $eq: ['$status', 'in_progress'] }, 1, 0] } },
+          pending: { $sum: { $cond: [{ $eq: ['$status', 'pending'] }, 1, 0] } },
+          avgRating: { $avg: '$feedback.rating' }
+        }
+      }
+    ]);
+
+    res.json({
+      success: true,
+      complaints: complaintsWithTimelines,
+      stats: stats[0] || { total: 0, resolved: 0, inProgress: 0, pending: 0, avgRating: null },
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit)
+      }
+    });
+
+  } catch (error) {
+    console.error('Get public complaints error:', error);
+    res.status(500).json({ error: 'Failed to get public complaints' });
+  }
+};
+
+/**
+ * Toggle complaint public visibility (for user's own complaints)
+ */
+const toggleComplaintVisibility = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+    const { isPublic } = req.body;
+
+    const complaint = await Complaint.findOne({ _id: id, userId });
+
+    if (!complaint) {
+      return res.status(404).json({ error: 'Complaint not found' });
+    }
+
+    complaint.isPublic = isPublic;
+    await complaint.save();
+
+    res.json({
+      success: true,
+      message: isPublic ? 'Complaint is now public' : 'Complaint is now private',
+      isPublic: complaint.isPublic
+    });
+
+  } catch (error) {
+    console.error('Toggle visibility error:', error);
+    res.status(500).json({ error: 'Failed to update visibility' });
+  }
+};
+
 module.exports = {
   createComplaint,
   getUserComplaints,
@@ -457,6 +594,8 @@ module.exports = {
   trackComplaint,
   submitFeedback,
   getWards,
+  getPublicComplaints,
+  toggleComplaintVisibility,
   COMPLAINT_CATEGORIES,
   PRIORITY_LEVELS
 };

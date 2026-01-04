@@ -21,7 +21,8 @@ const NewComplaint = () => {
     priority: 'normal',
     wardNumber: '',
     contactPhone: '',
-    imageUrls: []
+    imageUrls: [],
+    isPublic: false
   });
 
   const categories = complaintService.getCategories();
@@ -364,6 +365,26 @@ const NewComplaint = () => {
               <li>• <TranslatedText text="One complaint per issue for efficient tracking" /></li>
               <li>• <TranslatedText text="Use appropriate priority (urgent for safety issues)" /></li>
             </ul>
+          </div>
+
+          {/* Make Public Option */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4">
+            <label className="flex items-start space-x-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formData.isPublic}
+                onChange={(e) => setFormData(prev => ({ ...prev, isPublic: e.target.checked }))}
+                className="mt-1 w-4 h-4 text-gov-blue border-gray-300 rounded focus:ring-gov-blue"
+              />
+              <div>
+                <span className="font-medium text-gov-blue text-sm sm:text-base">
+                  <TranslatedText text="Make this complaint public" />
+                </span>
+                <p className="text-xs sm:text-sm text-gray-600 mt-1">
+                  <TranslatedText text="Allow other citizens to see how your complaint is resolved. This helps build trust and transparency. Your name will be shown as the complainant." />
+                </p>
+              </div>
+            </label>
           </div>
 
           {/* Actions */}
