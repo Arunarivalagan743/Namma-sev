@@ -52,7 +52,7 @@ import Analytics from './pages/admin/Analytics';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import AdminRoute from './components/auth/AdminRoute';
 
-// Status Pages
+// Status Pagess
 import PendingApproval from './pages/status/PendingApproval';
 
 function App() {
