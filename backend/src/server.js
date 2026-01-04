@@ -48,7 +48,8 @@ const corsOptions = {
       'http://localhost:5173', 
       'http://localhost:3000', 
       'https://gananam-sev.vercel.app',
-      'https://namma-sev.vercel.app'
+      'https://namma-sev.vercel.app',
+      'https://namma-sev-4.onrender.com'
     ];
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin || allowedOrigins.includes(origin)) {

@@ -1,10 +1,31 @@
 const { TranslationServiceClient } = require('@google-cloud/translate');
 const path = require('path');
+const fs = require('fs');
 
-// Initialize the Translation client with service account
-const translationClient = new TranslationServiceClient({
-  keyFilename: path.join(__dirname, '../config/google-translate-service-account.json')
-});
+// Initialize the Translation client with service account (with fallback)
+let translationClient = null;
+let translationEnabled = false;
+
+try {
+  const keyFilePath = path.join(__dirname, '../config/google-translate-service-account.json');
+  if (fs.existsSync(keyFilePath)) {
+    translationClient = new TranslationServiceClient({
+      keyFilename: keyFilePath
+    });
+    translationEnabled = true;
+    console.log('✅ Google Translate initialized successfully');
+  } else if (process.env.GOOGLE_TRANSLATE_CREDENTIALS) {
+    // Use environment variable if file doesn't exist
+    const credentials = JSON.parse(process.env.GOOGLE_TRANSLATE_CREDENTIALS);
+    translationClient = new TranslationServiceClient({ credentials });
+    translationEnabled = true;
+    console.log('✅ Google Translate initialized from env variable');
+  } else {
+    console.log('⚠️ Google Translate service account not found - translation disabled');
+  }
+} catch (error) {
+  console.error('⚠️ Failed to initialize Google Translate:', error.message);
+}
 
 const projectId = 'nam-sevai';
 const location = 'global';
@@ -61,6 +82,17 @@ const translateController = {
         });
       }
 
+      // If translation is disabled, return original text
+      if (!translationEnabled || !translationClient) {
+        return res.json({
+          success: true,
+          translatedText: text,
+          sourceLanguage,
+          targetLanguage,
+          note: 'Translation service unavailable - returning original text'
+        });
+      }
+
       // Check cache first
       const cacheKey = `${text}_${sourceLanguage}_${targetLanguage}`;
       if (translationCache.has(cacheKey)) {
@@ -100,10 +132,13 @@ const translateController = {
       });
     } catch (error) {
       console.error('Translation error:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Translation failed',
-        error: error.message
+      // Return original text on error instead of failing
+      return res.json({
+        success: true,
+        translatedText: req.body.text,
+        sourceLanguage: req.body.sourceLanguage || 'en',
+        targetLanguage: req.body.targetLanguage,
+        note: 'Translation failed - returning original text'
       });
     }
   },
@@ -124,6 +159,17 @@ const translateController = {
         return res.status(400).json({
           success: false,
           message: 'Target language is required'
+        });
+      }
+
+      // If translation is disabled, return original texts
+      if (!translationEnabled || !translationClient) {
+        return res.json({
+          success: true,
+          translations: texts.map(text => ({ original: text, translated: text })),
+          sourceLanguage,
+          targetLanguage,
+          note: 'Translation service unavailable - returning original texts'
         });
       }
 
