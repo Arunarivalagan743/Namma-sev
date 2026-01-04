@@ -15,7 +15,7 @@ const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   
-  const { login, checkIsAdmin, fetchUserProfile } = useAuth();
+  const { login, logout, checkIsAdmin, fetchUserProfile } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -34,23 +34,35 @@ const LoginPage = () => {
       // Wait for profile to be fetched
       const profile = await fetchUserProfile();
       
-      toast.success('Login successful');
-      
       // Redirect based on role
       if (checkIsAdmin(email)) {
-        navigate('/admin');
+        toast.success('Login successful');
+        navigate('/admin', { replace: true });
       } else if (profile) {
-        // User is registered, go to dashboard
+        // User is registered, check status
         if (profile.status === 'pending') {
-          navigate('/pending-approval');
+          // Log out the user - they cannot be logged in without approval
+          await logout();
+          toast.error('Your account is pending admin approval. Please wait for the administrator to approve your registration before you can login.');
+          return;
         } else if (profile.status === 'approved') {
-          navigate('/dashboard');
+          toast.success('Login successful');
+          navigate('/dashboard', { replace: true });
+        } else if (profile.status === 'rejected') {
+          // Log out the user - rejected users cannot login
+          await logout();
+          toast.error('Your registration was rejected by the administrator. Please contact support.');
+          return;
         } else {
-          toast.error('Your registration was rejected');
+          await logout();
+          toast.error('Invalid account status');
+          return;
         }
       } else {
-        // User not registered, go to registration
-        navigate('/register');
+        // User not registered in backend yet, log them out
+        await logout();
+        toast.error('Please complete your registration first');
+        navigate('/register', { replace: true });
       }
     } catch (error) {
       console.error('Login error:', error);

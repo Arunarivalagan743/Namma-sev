@@ -95,8 +95,20 @@ export const AuthProvider = ({ children }) => {
       setCurrentUser(user);
       
       if (user) {
-        setIsAdmin(checkIsAdmin(user.email));
-        await fetchUserProfile();
+        const isAdminUser = checkIsAdmin(user.email);
+        setIsAdmin(isAdminUser);
+        
+        // Fetch user profile
+        const profile = await fetchUserProfile();
+        
+        // If not admin and user is pending/rejected, log them out automatically
+        if (!isAdminUser && profile && (profile.status === 'pending' || profile.status === 'rejected')) {
+          console.log('User not approved, logging out...');
+          await signOut(auth);
+          setCurrentUser(null);
+          setUserProfile(null);
+          setIsAdmin(false);
+        }
       } else {
         setUserProfile(null);
         setIsAdmin(false);
@@ -108,6 +120,21 @@ export const AuthProvider = ({ children }) => {
     return unsubscribe;
   }, []);
 
+  // Check if user is approved
+  const isApproved = () => {
+    return userProfile?.status === 'approved';
+  };
+
+  // Check if user is pending
+  const isPending = () => {
+    return userProfile?.status === 'pending';
+  };
+
+  // Check if user is rejected
+  const isRejected = () => {
+    return userProfile?.status === 'rejected';
+  };
+
   const value = {
     currentUser,
     userProfile,
@@ -118,7 +145,10 @@ export const AuthProvider = ({ children }) => {
     logout,
     registerProfile,
     fetchUserProfile,
-    checkIsAdmin
+    checkIsAdmin,
+    isApproved,
+    isPending,
+    isRejected
   };
 
   return (

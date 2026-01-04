@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const engagementController = require('../controllers/engagementController');
-const { verifyToken, requireAdmin, optionalAuth } = require('../middleware/auth.middleware');
+const { verifyToken, requireAdmin, optionalAuth, requireApprovedUser } = require('../middleware/auth.middleware');
 
 // ============ PUBLIC ROUTES (No Auth Required) ============
 
@@ -38,22 +38,22 @@ router.get('/faqs', engagementController.getFaqs);
 // Suggestions (with optional auth to get user's upvotes)
 router.get('/suggestions', optionalAuth, engagementController.getSuggestions);
 
-// ============ USER ROUTES (Auth Required) ============
+// ============ USER ROUTES (Auth Required + Approved) ============
 
 // Meeting RSVP
-router.post('/meetings/:id/rsvp', verifyToken, engagementController.rsvpMeeting);
+router.post('/meetings/:id/rsvp', verifyToken, requireApprovedUser, engagementController.rsvpMeeting);
 
 // Scheme Bookmark
-router.post('/schemes/:id/bookmark', verifyToken, engagementController.bookmarkScheme);
+router.post('/schemes/:id/bookmark', verifyToken, requireApprovedUser, engagementController.bookmarkScheme);
 
 // Poll Vote
-router.post('/polls/:id/vote', verifyToken, engagementController.votePoll);
+router.post('/polls/:id/vote', verifyToken, requireApprovedUser, engagementController.votePoll);
 
 // Submit Suggestion
-router.post('/suggestions', verifyToken, engagementController.createSuggestion);
+router.post('/suggestions', verifyToken, requireApprovedUser, engagementController.createSuggestion);
 
 // Upvote Suggestion
-router.post('/suggestions/:id/upvote', verifyToken, engagementController.upvoteSuggestion);
+router.post('/suggestions/:id/upvote', verifyToken, requireApprovedUser, engagementController.upvoteSuggestion);
 
 // ============ ADMIN ROUTES ============
 

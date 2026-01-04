@@ -9,7 +9,7 @@ import api from '../../services/api';
 import toast from 'react-hot-toast';
 
 const SuggestionsPage = () => {
-  const { currentUser } = useAuth();
+  const { currentUser, userProfile } = useAuth();
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [suggestions, setSuggestions] = useState([]);
@@ -65,6 +65,18 @@ const SuggestionsPage = () => {
       navigate('/login');
       return;
     }
+
+    // Check if user is approved
+    if (!userProfile || userProfile.status !== 'approved') {
+      if (userProfile?.status === 'pending') {
+        toast.error('Your account is pending approval. Please wait for admin to approve your registration.');
+        navigate('/pending-approval', { replace: true });
+      } else {
+        toast.error('You need an approved account to upvote');
+      }
+      return;
+    }
+
     try {
       const response = await api.post(`/engagement/suggestions/${suggestionId}/upvote`);
       if (response.data.success) {
@@ -92,6 +104,17 @@ const SuggestionsPage = () => {
     if (!currentUser) {
       toast.error('Please login to submit a suggestion');
       navigate('/login');
+      return;
+    }
+
+    // Check if user is approved
+    if (!userProfile || userProfile.status !== 'approved') {
+      if (userProfile?.status === 'pending') {
+        toast.error('Your account is pending approval. Please wait for admin to approve your registration.');
+        navigate('/pending-approval', { replace: true });
+      } else {
+        toast.error('You need an approved account to submit suggestions');
+      }
       return;
     }
 

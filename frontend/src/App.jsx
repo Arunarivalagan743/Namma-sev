@@ -54,6 +54,7 @@ import AdminRoute from './components/auth/AdminRoute';
 
 // Status Pagess
 import PendingApproval from './pages/status/PendingApproval';
+import AccountRejected from './pages/status/AccountRejected';
 
 function App() {
   return (
@@ -93,6 +94,7 @@ function App() {
 
           {/* Status Pages */}
           <Route path="/pending-approval" element={<PendingApproval />} />
+          <Route path="/account-rejected" element={<AccountRejected />} />
 
           {/* Public Complaint Tracking */}
           <Route path="/track" element={<TrackComplaint />} />

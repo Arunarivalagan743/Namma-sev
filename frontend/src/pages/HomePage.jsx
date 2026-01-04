@@ -13,7 +13,7 @@ import {
 } from 'react-icons/fi';
 
 const HomePage = () => {
-  const { currentUser, userProfile, logout } = useAuth();
+  const { currentUser, userProfile, logout, loading: authLoading } = useAuth();
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
@@ -37,6 +37,28 @@ const HomePage = () => {
   });
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState(new Date());
+
+  // Redirect pending/rejected users to appropriate pages immediately
+  useEffect(() => {
+    if (!authLoading && userProfile) {
+      if (userProfile.status === 'pending') {
+        navigate('/pending-approval', { replace: true });
+        return;
+      } else if (userProfile.status === 'rejected') {
+        navigate('/account-rejected', { replace: true });
+        return;
+      }
+    }
+  }, [userProfile, authLoading, navigate]);
+
+  // Block rendering for pending/rejected users
+  if (!authLoading && userProfile && (userProfile.status === 'pending' || userProfile.status === 'rejected')) {
+    return (
+      <div className="min-h-screen bg-gov-cream flex items-center justify-center">
+        <div className="w-12 h-12 border-4 border-gov-blue border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   // Fetch home page data with auto-refresh every 30 seconds
   useEffect(() => {

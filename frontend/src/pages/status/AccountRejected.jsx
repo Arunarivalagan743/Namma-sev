@@ -1,12 +1,11 @@
-import { useEffect } from 'react';
 import { Link, Navigate } from 'react-router-dom';
-import { FiClock, FiLogOut } from 'react-icons/fi';
+import { FiXCircle, FiLogOut, FiMail } from 'react-icons/fi';
 import { useAuth } from '../../context/AuthContext';
 import { useTranslation } from '../../context/TranslationContext';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 
-const PendingApproval = () => {
+const AccountRejected = () => {
   const { currentUser, userProfile, logout, loading } = useAuth();
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -21,9 +20,9 @@ const PendingApproval = () => {
     return <Navigate to="/dashboard" replace />;
   }
 
-  // If user is rejected, redirect to rejected page
-  if (!loading && userProfile?.status === 'rejected') {
-    return <Navigate to="/account-rejected" replace />;
+  // If user is pending, redirect to pending page
+  if (!loading && userProfile?.status === 'pending') {
+    return <Navigate to="/pending-approval" replace />;
   }
 
   const handleLogout = async () => {
@@ -49,50 +48,61 @@ const PendingApproval = () => {
       <div className="max-w-sm sm:max-w-md w-full text-center">
         {/* Icon */}
         <div className="mb-4 sm:mb-6 flex justify-center">
-          <FiClock className="text-gray-600 w-8 h-8 sm:w-10 sm:h-10" />
+          <div className="w-16 h-16 sm:w-20 sm:h-20 bg-red-100 rounded-full flex items-center justify-center">
+            <FiXCircle className="text-red-600 w-8 h-8 sm:w-10 sm:h-10" />
+          </div>
         </div>
 
         {/* Title */}
-        <h1 className="text-xl sm:text-2xl font-bold text-gov-blue mb-3 sm:mb-4">
-          Registration Pending Approval
+        <h1 className="text-xl sm:text-2xl font-bold text-red-600 mb-3 sm:mb-4">
+          Registration Rejected
         </h1>
 
         {/* Message */}
-        <div className="bg-white p-4 sm:p-6 mb-4 sm:mb-6">
+        <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 mb-4 sm:mb-6">
           <p className="text-gray-600 mb-3 sm:mb-4 text-sm sm:text-base">
-            Thank you for registering with NamSev!
+            Unfortunately, your registration request has been rejected by the administrator.
           </p>
-          <p className="text-gray-600 mb-3 sm:mb-4 text-sm sm:text-base">
-            Your registration is currently under review by the Panchayat administrator. 
-            This process helps us verify that you are a resident of our Panchayat.
-          </p>
-          <div className="bg-gray-50 border border-gray-300 rounded-lg p-3 sm:p-4">
-            <p className="text-xs sm:text-sm text-gray-800">
+          
+          {userProfile?.rejectionReason && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4 mb-3 sm:mb-4">
+              <p className="text-xs sm:text-sm font-medium text-red-800 mb-1">Reason:</p>
+              <p className="text-xs sm:text-sm text-red-700">{userProfile.rejectionReason}</p>
+            </div>
+          )}
+
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 sm:p-4">
+            <p className="text-xs sm:text-sm text-gray-600">
               <strong>Email:</strong> {currentUser?.email}
-            </p>
-            <p className="text-xs sm:text-sm text-gray-700 mt-1.5 sm:mt-2">
-              You will receive an email notification once your account is approved.
             </p>
           </div>
         </div>
 
-        {/* What to expect */}
-        <div className="bg-white p-4 sm:p-6 mb-4 sm:mb-6 text-left">
-          <h3 className="font-semibold text-gov-blue mb-2 sm:mb-3 text-sm sm:text-base">What happens next?</h3>
+        {/* What to do next */}
+        <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 mb-4 sm:mb-6 text-left">
+          <h3 className="font-semibold text-gov-blue mb-2 sm:mb-3 text-sm sm:text-base">What can you do?</h3>
           <ul className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm text-gray-600">
             <li className="flex items-start space-x-2">
-              <span className="text-gov-blue font-bold">1.</span>
-              <span>Admin reviews your registration details</span>
+              <span className="text-gov-blue font-bold">•</span>
+              <span>Contact the Panchayat office for more information</span>
             </li>
             <li className="flex items-start space-x-2">
-              <span className="text-gov-blue font-bold">2.</span>
-              <span>Verification of residency information</span>
+              <span className="text-gov-blue font-bold">•</span>
+              <span>Verify your registration details are correct</span>
             </li>
             <li className="flex items-start space-x-2">
-              <span className="text-gov-blue font-bold">3.</span>
-              <span>Account activation upon approval</span>
+              <span className="text-gov-blue font-bold">•</span>
+              <span>Register again with accurate information</span>
             </li>
           </ul>
+        </div>
+
+        {/* Contact Info */}
+        <div className="bg-blue-50 rounded-lg p-4 mb-4 sm:mb-6">
+          <div className="flex items-center justify-center space-x-2 text-gov-blue">
+            <FiMail size={18} />
+            <span className="text-sm">panchayat.office@gmail.com</span>
+          </div>
         </div>
 
         {/* Actions */}
@@ -104,11 +114,16 @@ const PendingApproval = () => {
             <FiLogOut size={18} />
             <span>{t('logout')}</span>
           </button>
-        
+          <Link 
+            to="/" 
+            className="block text-gov-blue hover:underline text-sm"
+          >
+            Go to Homepage
+          </Link>
         </div>
       </div>
     </div>
   );
 };
 
-export default PendingApproval;
+export default AccountRejected;

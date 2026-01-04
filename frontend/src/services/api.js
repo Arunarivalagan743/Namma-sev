@@ -37,6 +37,19 @@ api.interceptors.response.use(
       // Token expired or invalid
       console.error('Unauthorized request');
     }
+    
+    // Handle pending approval or rejected user errors
+    if (error.response?.status === 403) {
+      const errorData = error.response.data;
+      if (errorData?.error === 'Pending Approval') {
+        // User is pending approval, redirect to pending page
+        window.location.href = '/pending-approval';
+      } else if (errorData?.message?.includes('rejected')) {
+        // User is rejected
+        window.location.href = '/account-rejected';
+      }
+    }
+    
     return Promise.reject(error);
   }
 );

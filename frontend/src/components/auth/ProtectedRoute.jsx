@@ -31,8 +31,13 @@ const ProtectedRoute = ({ children }) => {
     return <Navigate to="/pending-approval" replace />;
   }
 
-  // Rejected user
+  // Rejected user - redirect to rejected page
   if (userProfile.status === 'rejected') {
+    return <Navigate to="/account-rejected" replace />;
+  }
+
+  // Only approved users can access protected routes
+  if (userProfile.status !== 'approved') {
     return <Navigate to="/login" replace />;
   }
 

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useTranslation } from '../../context/TranslationContext';
 import CitizenNav from '../../components/CitizenNav';
@@ -7,8 +8,9 @@ import api from '../../services/api';
 import toast from 'react-hot-toast';
 
 const PollsPage = () => {
-  const { currentUser } = useAuth();
+  const { currentUser, userProfile } = useAuth();
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [polls, setPolls] = useState([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState(new Date());
@@ -44,6 +46,17 @@ const PollsPage = () => {
   const handleVote = async (pollId, optionId) => {
     if (!currentUser) {
       toast.error('Please login to vote');
+      return;
+    }
+
+    // Check if user is approved
+    if (!userProfile || userProfile.status !== 'approved') {
+      if (userProfile?.status === 'pending') {
+        toast.error('Your account is pending approval. Please wait for admin to approve your registration.');
+        navigate('/pending-approval', { replace: true });
+      } else {
+        toast.error('You need an approved account to vote');
+      }
       return;
     }
 
