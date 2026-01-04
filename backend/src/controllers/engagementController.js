@@ -142,8 +142,12 @@ const getHomeData = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error fetching home data:', error);
-    res.status(500).json({ success: false, message: 'Failed to fetch home data' });
+    console.error('Error fetching home data:', error.message, error.stack);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to fetch home data',
+      error: error.message 
+    });
   }
 };
 

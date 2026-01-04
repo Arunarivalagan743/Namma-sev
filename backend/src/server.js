@@ -20,6 +20,9 @@ const { connectDB } = require('./config/database');
 // Initialize express app
 const app = express();
 
+// Track database connection state for serverless
+let isDbConnected = false;
+
 // ============ AUTO-CLEANUP SCHEDULER ============
 // TODO: Implement MongoDB-based cleanup for expired polls and meetings
 const scheduleCleanup = () => {
@@ -41,23 +44,49 @@ const scheduleCleanup = () => {
 };
 // ============ END CLEANUP SCHEDULER ============
 
-// Middleware
-app.use(cors({
-  origin: [
-    'http://localhost:5173', 
-    'http://localhost:3000', 
-    'https://gananam-sev.vercel.app',
-    'https://namma-sev.vercel.app'
-  ],
+// CORS configuration - must be first middleware
+const corsOptions = {
+  origin: function(origin, callback) {
+    const allowedOrigins = [
+      'http://localhost:5173', 
+      'http://localhost:3000', 
+      'https://gananam-sev.vercel.app',
+      'https://namma-sev.vercel.app'
+    ];
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(null, true); // Allow all origins in production for now
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
-}));
+};
+
+// Apply CORS middleware
+app.use(cors(corsOptions));
+
+// Handle preflight requests explicitly
+app.options('*', cors(corsOptions));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Connect to MongoDB database
-connectDB();
+// Database connection middleware for serverless
+app.use(async (req, res, next) => {
+  if (!isDbConnected) {
+    try {
+      await connectDB();
+      isDbConnected = true;
+    } catch (error) {
+      console.error('Database connection error:', error);
+      return res.status(500).json({ error: 'Database connection failed' });
+    }
+  }
+  next();
+});
 
 // API Routes
 app.use('/api/auth', authRoutes);
@@ -102,7 +131,7 @@ if (process.env.VERCEL !== '1') {
   ║   🏛️  NamSev - Panchayat Civic Engagement Platform        ║
   ║                                                           ║
   ║   Server running on port ${PORT}                            ║
-  ║   Environment: ${process.env.NODE_ENV || 'development'}                          ║
+  ║   Environment: ${process.env.NODE_ENV || 'development'}                         ║
   ║                                                           ║
   ╚═══════════════════════════════════════════════════════════╝
     `);
