@@ -24,6 +24,81 @@ html {
   display: inline-block;
 }
 
+/* ===== MOBILE NAVBAR & HERO SHAKE FIX ===== */
+
+/* Fixed width nav links to prevent shifting on language change */
+@media (max-width: 1024px) {
+  /* Prevent mobile header from shifting */
+  .mobile-nav-container {
+    min-width: 100%;
+    contain: layout;
+  }
+  
+  /* Fixed width login/logout buttons */
+  .nav-auth-btn {
+    min-width: 70px;
+    text-align: center;
+    white-space: nowrap;
+  }
+  
+  /* Stable language selector */
+  .nav-lang-selector {
+    min-width: 50px;
+    flex-shrink: 0;
+  }
+}
+
+/* Hero section stability */
+.hero-title {
+  min-height: 1.2em;
+  line-height: 1.2;
+  will-change: auto;
+}
+
+.hero-subtitle {
+  min-height: 2em;
+  will-change: auto;
+}
+
+.hero-btn {
+  min-width: 140px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* Prevent all text containers from collapsing */
+.nav-text-stable {
+  display: inline-block;
+  min-width: max-content;
+}
+
+/* Disable transitions during language change */
+.language-changing,
+.language-changing * {
+  transition: none !important;
+  animation: none !important;
+}
+
+/* Sticky nav stability */
+.sticky-nav {
+  contain: layout style;
+  will-change: transform;
+}
+
+/* Mobile menu items - fixed widths */
+@media (max-width: 768px) {
+  .mobile-menu-item {
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+  }
+  
+  .mobile-menu-text {
+    min-width: 100px;
+    display: inline-block;
+  }
+}
+
 /* Responsive font sizes */
 @media (max-width: 640px) {
   html {

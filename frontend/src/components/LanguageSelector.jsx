@@ -32,17 +32,17 @@ const LanguageSelector = ({ variant = 'dropdown', className = '' }) => {
       <div className={`relative ${className}`} ref={dropdownRef}>
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="flex items-center space-x-1 text-sm text-gray-600 hover:text-orange-600 transition-colors"
+          className="flex items-center space-x-1 text-sm text-gray-600 hover:text-orange-600 transition-colors min-w-[50px]"
           aria-label="Select language"
         >
-          <FiGlobe size={16} />
-          <span className="font-medium">{currentLang.nativeName}</span>
+          <FiGlobe size={16} className="flex-shrink-0" />
+          <span className="font-medium whitespace-nowrap">{currentLang.nativeName}</span>
           <FiChevronDown 
             size={14} 
-            className={`transition-transform ${isOpen ? 'rotate-180' : ''}`} 
+            className={`transition-transform flex-shrink-0 ${isOpen ? 'rotate-180' : ''}`} 
           />
           {isTranslating && (
-            <div className="w-3 h-3 border-2 border-orange-500 border-t-transparent rounded-full animate-spin ml-1" />
+            <div className="w-3 h-3 border-2 border-orange-500 border-t-transparent rounded-full animate-spin ml-1 flex-shrink-0" />
           )}
         </button>
 

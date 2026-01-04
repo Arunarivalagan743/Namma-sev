@@ -154,74 +154,74 @@ const HomePage = () => {
             <Link
               to="/"
               onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center space-x-3 px-4 py-3 text-white hover:bg-white/10 rounded-lg transition-colors"
+              className="mobile-menu-item flex items-center space-x-3 px-4 py-3 text-white hover:bg-white/10 rounded-lg transition-colors"
             >
-              <FiHome size={20} />
-              <span className="font-medium">{t('home')}</span>
+              <FiHome size={20} className="flex-shrink-0" />
+              <span className="mobile-menu-text font-medium">{t('home')}</span>
             </Link>
             <Link
               to="/meetings"
               onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center space-x-3 px-4 py-3 text-white hover:bg-white/10 rounded-lg transition-colors"
+              className="mobile-menu-item flex items-center space-x-3 px-4 py-3 text-white hover:bg-white/10 rounded-lg transition-colors"
             >
-              <FiUsers size={20} />
-              <span className="font-medium">Gram Sabha</span>
+              <FiUsers size={20} className="flex-shrink-0" />
+              <span className="mobile-menu-text font-medium">Gram Sabha</span>
             </Link>
             <Link
               to="/schemes"
               onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center space-x-3 px-4 py-3 text-white hover:bg-white/10 rounded-lg transition-colors"
+              className="mobile-menu-item flex items-center space-x-3 px-4 py-3 text-white hover:bg-white/10 rounded-lg transition-colors"
             >
-              <FiBookOpen size={20} />
-              <span className="font-medium">Schemes</span>
+              <FiBookOpen size={20} className="flex-shrink-0" />
+              <span className="mobile-menu-text font-medium">Schemes</span>
             </Link>
             <Link
               to="/events"
               onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center space-x-3 px-4 py-3 text-white hover:bg-white/10 rounded-lg transition-colors"
+              className="mobile-menu-item flex items-center space-x-3 px-4 py-3 text-white hover:bg-white/10 rounded-lg transition-colors"
             >
-              <FiCalendar size={20} />
-              <span className="font-medium">Events</span>
+              <FiCalendar size={20} className="flex-shrink-0" />
+              <span className="mobile-menu-text font-medium">Events</span>
             </Link>
             <Link
               to="/works"
               onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center space-x-3 px-4 py-3 text-white hover:bg-white/10 rounded-lg transition-colors"
+              className="mobile-menu-item flex items-center space-x-3 px-4 py-3 text-white hover:bg-white/10 rounded-lg transition-colors"
             >
-              <FiGrid size={20} />
-              <span className="font-medium">Works</span>
+              <FiGrid size={20} className="flex-shrink-0" />
+              <span className="mobile-menu-text font-medium">Works</span>
             </Link>
             <Link
               to="/polls"
               onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center space-x-3 px-4 py-3 text-white hover:bg-white/10 rounded-lg transition-colors"
+              className="mobile-menu-item flex items-center space-x-3 px-4 py-3 text-white hover:bg-white/10 rounded-lg transition-colors"
             >
-              <FiPieChart size={20} />
-              <span className="font-medium">Polls</span>
+              <FiPieChart size={20} className="flex-shrink-0" />
+              <span className="mobile-menu-text font-medium">Polls</span>
             </Link>
             <Link
               to="/calendar"
               onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center space-x-3 px-4 py-3 text-white hover:bg-white/10 rounded-lg transition-colors"
+              className="mobile-menu-item flex items-center space-x-3 px-4 py-3 text-white hover:bg-white/10 rounded-lg transition-colors"
             >
-              <FiList size={20} />
-              <span className="font-medium">Calendar</span>
+              <FiList size={20} className="flex-shrink-0" />
+              <span className="mobile-menu-text font-medium">Calendar</span>
             </Link>
             <Link
               to="/announcements"
               onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center space-x-3 px-4 py-3 text-white hover:bg-white/10 rounded-lg transition-colors"
+              className="mobile-menu-item flex items-center space-x-3 px-4 py-3 text-white hover:bg-white/10 rounded-lg transition-colors"
             >
-              <FiFileText size={20} />
-              <span className="font-medium">News</span>
+              <FiFileText size={20} className="flex-shrink-0" />
+              <span className="mobile-menu-text font-medium">News</span>
             </Link>
             <Link
               to="/faqs"
               onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center space-x-3 px-4 py-3 text-white hover:bg-white/10 rounded-lg transition-colors"
+              className="mobile-menu-item flex items-center space-x-3 px-4 py-3 text-white hover:bg-white/10 rounded-lg transition-colors"
             >
-              <FiHelpCircle size={20} />
-              <span className="font-medium">Contact</span>
+              <FiHelpCircle size={20} className="flex-shrink-0" />
+              <span className="mobile-menu-text font-medium">Contact</span>
             </Link>
           </div>
           
@@ -236,19 +236,19 @@ const HomePage = () => {
                   handleLogout();
                   setMobileMenuOpen(false);
                 }}
-                className="flex items-center space-x-3 w-full px-4 py-3 text-white hover:bg-white/10 rounded-lg transition-colors"
+                className="mobile-menu-item flex items-center space-x-3 w-full px-4 py-3 text-white hover:bg-white/10 rounded-lg transition-colors"
               >
-                <FiLogOut size={20} />
-                <span className="font-medium">{t('logout')}</span>
+                <FiLogOut size={20} className="flex-shrink-0" />
+                <span className="mobile-menu-text font-medium">{t('logout')}</span>
               </button>
             ) : (
               <Link
                 to="/login"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center space-x-3 px-4 py-3 bg-[#c41e3a] text-white rounded-lg hover:bg-[#a01830] transition-colors"
+                className="mobile-menu-item flex items-center space-x-3 px-4 py-3 bg-[#c41e3a] text-white rounded-lg hover:bg-[#a01830] transition-colors"
               >
-                <FiLogIn size={20} />
-                <span className="font-medium">{t('login')}</span>
+                <FiLogIn size={20} className="flex-shrink-0" />
+                <span className="mobile-menu-text font-medium">{t('login')}</span>
               </Link>
             )}
           </div>
@@ -298,16 +298,18 @@ const HomePage = () => {
               </div>
               
               {/* Mobile Menu Button */}
-              <div className="lg:hidden flex items-center space-x-2 sm:space-x-3">
-                <LanguageSelector variant="compact" className="text-white [&_button]:text-white" />
+              <div className="lg:hidden flex items-center space-x-2 sm:space-x-3 mobile-nav-container">
+                <div className="nav-lang-selector">
+                  <LanguageSelector variant="compact" className="text-white [&_button]:text-white" />
+                </div>
                 {isLoggedIn ? (
-                  <button onClick={handleLogout} className="text-white text-sm px-2 sm:px-3 py-2">{t('logout')}</button>
+                  <button onClick={handleLogout} className="text-white text-sm px-2 sm:px-3 py-2 nav-auth-btn">{t('logout')}</button>
                 ) : (
-                  <Link to="/login" className="bg-[#c41e3a] text-white px-2 sm:px-3 py-2 rounded text-sm">{t('login')}</Link>
+                  <Link to="/login" className="bg-[#c41e3a] text-white px-2 sm:px-3 py-2 rounded text-sm nav-auth-btn">{t('login')}</Link>
                 )}
                 <button
                   onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                  className="p-2 text-white hover:bg-white/10 rounded-lg transition-colors"
+                  className="p-2 text-white hover:bg-white/10 rounded-lg transition-colors flex-shrink-0"
                   aria-label="Toggle menu"
                 >
                   {mobileMenuOpen ? <FiX size={24} /> : <FiMenu size={24} />}
@@ -343,13 +345,13 @@ const HomePage = () => {
           <div className="container mx-auto px-4 sm:px-6 pt-24 sm:pt-32 md:pt-40 pb-16">
             <div className="max-w-full sm:max-w-xl md:max-w-2xl lg:max-w-3xl">
               {/* Main Headline */}
-              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-serif text-white leading-tight mb-4 sm:mb-6">
+              <h1 className="hero-title text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-serif text-white leading-tight mb-4 sm:mb-6">
                 {t('heroTitle')}
               </h1>
 
               {/* Subtitle with Left Border */}
               <div className="border-l-4 border-white/50 pl-4 sm:pl-6 mb-6 sm:mb-10">
-                <p className="text-white/90 text-base sm:text-lg md:text-xl leading-relaxed max-w-2xl">
+                <p className="hero-subtitle text-white/90 text-base sm:text-lg md:text-xl leading-relaxed max-w-2xl">
                   {t('heroSubtitle')}
                 </p>
               </div>
@@ -358,13 +360,13 @@ const HomePage = () => {
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-6">
                 <Link 
                   to={isLoggedIn ? "/new-complaint" : "/register"}
-                  className="bg-[#c41e3a] text-white px-6 sm:px-8 py-3 sm:py-4 rounded font-medium text-base sm:text-lg hover:bg-[#a01830] transition-colors shadow-lg text-center"
+                  className="hero-btn bg-[#c41e3a] text-white px-6 sm:px-8 py-3 sm:py-4 rounded font-medium text-base sm:text-lg hover:bg-[#a01830] transition-colors shadow-lg text-center"
                 >
                   {isLoggedIn ? t('fileComplaint') : t('getStarted')}
                 </Link>
                 <Link 
                   to="/meetings"
-                  className="bg-white/10 backdrop-blur-sm text-white border border-white/30 px-6 sm:px-8 py-3 sm:py-4 rounded font-medium text-base sm:text-lg hover:bg-white/20 transition-colors text-center"
+                  className="hero-btn bg-white/10 backdrop-blur-sm text-white border border-white/30 px-6 sm:px-8 py-3 sm:py-4 rounded font-medium text-base sm:text-lg hover:bg-white/20 transition-colors text-center"
                 >
                   {t('gramSabha')}
                 </Link>

@@ -893,10 +893,18 @@ export const TranslationProvider = ({ children }) => {
     }
   }, [currentLanguage, dynamicCache]);
 
-  // Change language
+  // Change language with temporary transition disable
   const changeLanguage = useCallback((langCode) => {
     if (SUPPORTED_LANGUAGES.some(l => l.code === langCode)) {
+      // Add class to disable transitions during language change
+      document.body.classList.add('language-changing');
+      
       setCurrentLanguage(langCode);
+      
+      // Remove class after a short delay to allow text to update
+      setTimeout(() => {
+        document.body.classList.remove('language-changing');
+      }, 300);
     }
   }, []);
 
