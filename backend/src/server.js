@@ -43,7 +43,12 @@ const scheduleCleanup = () => {
 
 // Middleware
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:3000', 'https://ganamann-sev.vercel.app'],
+  origin: [
+    'http://localhost:5173', 
+    'http://localhost:3000', 
+    'https://ganamann-sev.vercel.app',
+    'https://namma-sev.vercel.app'
+  ],
   credentials: true
 }));
 app.use(express.json());
@@ -84,10 +89,12 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Start server
+// Start server only when not in Vercel serverless environment
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`
+
+if (process.env.VERCEL !== '1') {
+  app.listen(PORT, () => {
+    console.log(`
   ╔═══════════════════════════════════════════════════════════╗
   ║                                                           ║
   ║   🏛️  NamSev - Panchayat Civic Engagement Platform        ║
@@ -96,9 +103,13 @@ app.listen(PORT, () => {
   ║   Environment: ${process.env.NODE_ENV || 'development'}                          ║
   ║                                                           ║
   ╚═══════════════════════════════════════════════════════════╝
-  `);
-  
-  // Start the cleanup scheduler
-  scheduleCleanup();
-  console.log('🕐 Auto-cleanup scheduler started (runs every 6 hours)');
-});
+    `);
+    
+    // Start the cleanup scheduler
+    scheduleCleanup();
+    console.log('🕐 Auto-cleanup scheduler started (runs every 6 hours)');
+  });
+}
+
+// Export for Vercel serverless
+module.exports = app;
