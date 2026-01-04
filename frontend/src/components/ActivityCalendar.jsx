@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from '../context/TranslationContext';
+import TranslatedText from './TranslatedText';
 import api from '../services/api';
 
 const ActivityCalendar = ({ variant = 'full' }) => {
@@ -354,11 +355,11 @@ const ActivityCalendar = ({ variant = 'full' }) => {
                 <div className="flex-1 min-w-0">
                   <p className={`text-xs sm:text-sm font-medium ${activity.textColor} truncate`}>
                     {activity.titlePrefix ? `${t(activity.titlePrefix)}: ` : ''}
-                    {activity.title}
+                    <TranslatedText text={activity.title} />
                     {activity.titleSuffix ? ` - ${t(activity.titleSuffix)}` : ''}
                   </p>
                   <p className="text-[10px] sm:text-xs text-gray-500 truncate">
-                    {activity.categoryKey ? t(activity.categoryKey) : activity.category} {activity.venue && `• ${activity.venue}`}
+                    {activity.categoryKey ? t(activity.categoryKey) : <TranslatedText text={activity.category} />} {activity.venue && <>• <TranslatedText text={activity.venue} /></>}
                   </p>
                 </div>
               </Link>
@@ -401,12 +402,12 @@ const ActivityCalendar = ({ variant = 'full' }) => {
                   <div className="flex-1 min-w-0">
                     <p className={`text-xs sm:text-sm font-medium ${activity.textColor} truncate`}>
                       {activity.titlePrefix ? `${t(activity.titlePrefix)}: ` : ''}
-                      {activity.title}
+                      <TranslatedText text={activity.title} />
                       {activity.titleSuffix ? ` - ${t(activity.titleSuffix)}` : ''}
                     </p>
                     <p className="text-[10px] sm:text-xs text-gray-500">
                       {new Date(activity.date).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}
-                      {' • '}{activity.categoryKey ? t(activity.categoryKey) : activity.category}
+                      {' • '}{activity.categoryKey ? t(activity.categoryKey) : <TranslatedText text={activity.category} />}
                     </p>
                   </div>
                 </Link>

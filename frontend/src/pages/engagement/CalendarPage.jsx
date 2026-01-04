@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from '../../context/TranslationContext';
+import TranslatedText from '../../components/TranslatedText';
 import CitizenNav from '../../components/CitizenNav';
 import api from '../../services/api';
 import { FiCalendar, FiMapPin, FiClock, FiArrowRight } from 'react-icons/fi';
@@ -436,13 +437,13 @@ const CalendarPage = () => {
                         </span>
                         <h4 className="font-semibold text-gray-800 mt-1 text-sm sm:text-base">
                           {activity.titlePrefix ? `${t(activity.titlePrefix)}: ` : ''}
-                          {activity.title}
+                          <TranslatedText text={activity.title} />
                           {activity.titleSuffix ? ` - ${t(activity.titleSuffix)}` : ''}
                         </h4>
                         {activity.venue && (
                           <p className="text-xs sm:text-sm text-gray-500 flex items-center mt-1">
                             <FiMapPin className="mr-1" size={12} />
-                            {activity.venue}
+                            <TranslatedText text={activity.venue} />
                           </p>
                         )}
                         <p className="text-xs sm:text-sm text-gray-500 flex items-center mt-1">
@@ -476,12 +477,12 @@ const CalendarPage = () => {
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-gray-800 truncate text-sm sm:text-base">
                             {activity.titlePrefix ? `${t(activity.titlePrefix)}: ` : ''}
-                            {activity.title}
+                            <TranslatedText text={activity.title} />
                             {activity.titleSuffix ? ` - ${t(activity.titleSuffix)}` : ''}
                           </p>
                           <p className="text-xs sm:text-sm text-gray-500">
                             {new Date(activity.date).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}
-                            {' • '}{activity.categoryKey ? t(activity.categoryKey) : activity.category}
+                            {' • '}{activity.categoryKey ? t(activity.categoryKey) : <TranslatedText text={activity.category} />}
                           </p>
                         </div>
                       </Link>
@@ -521,17 +522,17 @@ const CalendarPage = () => {
                     </span>
                     <h3 className="font-semibold text-gray-800 text-sm sm:text-base md:text-lg">
                       {activity.titlePrefix ? `${t(activity.titlePrefix)}: ` : ''}
-                      {activity.title}
+                      <TranslatedText text={activity.title} />
                       {activity.titleSuffix ? ` - ${t(activity.titleSuffix)}` : ''}
                     </h3>
                     {activity.description && (
-                      <p className="text-gray-500 text-xs sm:text-sm mt-1 line-clamp-2">{activity.description}</p>
+                      <p className="text-gray-500 text-xs sm:text-sm mt-1 line-clamp-2"><TranslatedText text={activity.description} /></p>
                     )}
                     <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-1.5 sm:mt-2 text-xs sm:text-sm text-gray-500">
                       {activity.venue && (
                         <span className="flex items-center">
                           <FiMapPin className="mr-1" size={12} />
-                          <span className="truncate max-w-[100px] sm:max-w-none">{activity.venue}</span>
+                          <span className="truncate max-w-[100px] sm:max-w-none"><TranslatedText text={activity.venue} /></span>
                         </span>
                       )}
                       <span className="flex items-center">
