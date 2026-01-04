@@ -46,10 +46,12 @@ app.use(cors({
   origin: [
     'http://localhost:5173', 
     'http://localhost:3000', 
-    'https://ganamann-sev.vercel.app',
+    'https://gananam-sev.vercel.app',
     'https://namma-sev.vercel.app'
   ],
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
