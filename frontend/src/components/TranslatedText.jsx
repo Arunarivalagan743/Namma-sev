@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from '../context/TranslationContext';
 
 /**
@@ -9,30 +9,33 @@ const TranslatedText = ({ text, className = '', as: Component = 'span' }) => {
   const { translateText, currentLanguage } = useTranslation();
   const [translatedText, setTranslatedText] = useState(text);
   const [isLoading, setIsLoading] = useState(false);
+  const prevTextRef = useRef(text);
 
   useEffect(() => {
     let isMounted = true;
 
     const doTranslate = async () => {
-      if (!text || currentLanguage === 'en') {
+      if (!text) {
         setTranslatedText(text);
         return;
       }
 
-      setIsLoading(true);
+      // If switching back to English, just use original text
+      if (currentLanguage === 'en') {
+        setTranslatedText(text);
+        return;
+      }
+
+      // Don't show loading state to prevent flicker - keep showing current text
       try {
         const result = await translateText(text);
-        if (isMounted) {
+        if (isMounted && result) {
           setTranslatedText(result);
         }
       } catch (error) {
-        console.error('Translation error:', error);
+        // Keep showing current text on error
         if (isMounted) {
           setTranslatedText(text);
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
         }
       }
     };
@@ -44,9 +47,25 @@ const TranslatedText = ({ text, className = '', as: Component = 'span' }) => {
     };
   }, [text, currentLanguage, translateText]);
 
+  // Update if source text changes
+  useEffect(() => {
+    if (text !== prevTextRef.current) {
+      prevTextRef.current = text;
+      if (currentLanguage === 'en') {
+        setTranslatedText(text);
+      }
+    }
+  }, [text, currentLanguage]);
+
   return (
-    <Component className={`${className} ${isLoading ? 'opacity-70' : ''}`}>
-      {translatedText}
+    <Component 
+      className={className}
+      style={{ 
+        minHeight: '1em',
+        transition: 'none' // Disable transitions to prevent visual jitter
+      }}
+    >
+      {translatedText || text}
     </Component>
   );
 };

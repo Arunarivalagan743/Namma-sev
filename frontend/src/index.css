@@ -13,6 +13,17 @@ html {
   scroll-behavior: smooth;
 }
 
+/* Prevent layout shift during translation */
+[data-translating] * {
+  transition: none !important;
+}
+
+/* Stable text containers to prevent shaking */
+.translate-stable {
+  min-height: 1em;
+  display: inline-block;
+}
+
 /* Responsive font sizes */
 @media (max-width: 640px) {
   html {
