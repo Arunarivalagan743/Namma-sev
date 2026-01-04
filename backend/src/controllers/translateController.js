@@ -1,30 +1,17 @@
-const { TranslationServiceClient } = require('@google-cloud/translate');
+const axios = require('axios');
 const path = require('path');
 const fs = require('fs');
 
-// Initialize the Translation client with service account (with fallback)
-let translationClient = null;
-let translationEnabled = false;
+// Google Translate API Key (simpler method for deployment)
+const GOOGLE_TRANSLATE_API_KEY = process.env.GOOGLE_TRANSLATE_API_KEY;
 
-try {
-  const keyFilePath = path.join(__dirname, '../config/google-translate-service-account.json');
-  if (fs.existsSync(keyFilePath)) {
-    translationClient = new TranslationServiceClient({
-      keyFilename: keyFilePath
-    });
-    translationEnabled = true;
-    console.log('✅ Google Translate initialized successfully');
-  } else if (process.env.GOOGLE_TRANSLATE_CREDENTIALS) {
-    // Use environment variable if file doesn't exist
-    const credentials = JSON.parse(process.env.GOOGLE_TRANSLATE_CREDENTIALS);
-    translationClient = new TranslationServiceClient({ credentials });
-    translationEnabled = true;
-    console.log('✅ Google Translate initialized from env variable');
-  } else {
-    console.log('⚠️ Google Translate service account not found - translation disabled');
-  }
-} catch (error) {
-  console.error('⚠️ Failed to initialize Google Translate:', error.message);
+// Check if translation is enabled
+let translationEnabled = !!GOOGLE_TRANSLATE_API_KEY;
+
+if (translationEnabled) {
+  console.log('✅ Google Translate API Key found - translation enabled');
+} else {
+  console.log('⚠️ GOOGLE_TRANSLATE_API_KEY not set - translation will return original text');
 }
 
 const projectId = 'nam-sevai';
@@ -42,6 +29,23 @@ const SUPPORTED_LANGUAGES = [
 
 // Cache for translations to reduce API calls
 const translationCache = new Map();
+
+// Helper function to translate using Google Translate API v2 (API Key method)
+const translateWithApiKey = async (text, targetLanguage, sourceLanguage = 'en') => {
+  const url = `https://translation.googleapis.com/language/translate/v2`;
+  
+  const response = await axios.post(url, null, {
+    params: {
+      q: text,
+      target: targetLanguage,
+      source: sourceLanguage,
+      key: GOOGLE_TRANSLATE_API_KEY,
+      format: 'text'
+    }
+  });
+  
+  return response.data.data.translations[0].translatedText;
+};
 
 const translateController = {
   // Get list of supported languages
@@ -83,7 +87,7 @@ const translateController = {
       }
 
       // If translation is disabled, return original text
-      if (!translationEnabled || !translationClient) {
+      if (!translationEnabled) {
         return res.json({
           success: true,
           translatedText: text,
@@ -105,21 +109,8 @@ const translateController = {
         });
       }
 
-      // Prepare request for Google Cloud Translation API v3
-      const request = {
-        parent: `projects/${projectId}/locations/${location}`,
-        contents: Array.isArray(text) ? text : [text],
-        mimeType: 'text/plain',
-        sourceLanguageCode: sourceLanguage,
-        targetLanguageCode: targetLanguage
-      };
-
-      // Call the Translation API
-      const [response] = await translationClient.translateText(request);
-
-      // Extract translated text
-      const translations = response.translations.map(t => t.translatedText);
-      const translatedText = Array.isArray(text) ? translations : translations[0];
+      // Call Google Translate API
+      const translatedText = await translateWithApiKey(text, targetLanguage, sourceLanguage);
 
       // Cache the translation
       translationCache.set(cacheKey, translatedText);
@@ -131,7 +122,7 @@ const translateController = {
         targetLanguage
       });
     } catch (error) {
-      console.error('Translation error:', error);
+      console.error('Translation error:', error.message);
       // Return original text on error instead of failing
       return res.json({
         success: true,
@@ -163,7 +154,7 @@ const translateController = {
       }
 
       // If translation is disabled, return original texts
-      if (!translationEnabled || !translationClient) {
+      if (!translationEnabled) {
         return res.json({
           success: true,
           translations: texts.map(text => ({ original: text, translated: text })),
@@ -212,22 +203,17 @@ const translateController = {
         });
       }
 
-      // Translate uncached texts
-      const request = {
-        parent: `projects/${projectId}/locations/${location}`,
-        contents: textsToTranslate,
-        mimeType: 'text/plain',
-        sourceLanguageCode: sourceLanguage,
-        targetLanguageCode: targetLanguage
-      };
-
-      const [response] = await translationClient.translateText(request);
+      // Translate uncached texts using API key method
+      const translationPromises = textsToTranslate.map(text => 
+        translateWithApiKey(text, targetLanguage, sourceLanguage)
+      );
+      
+      const translatedTexts = await Promise.all(translationPromises);
 
       // Process and cache results
-      response.translations.forEach((translation, i) => {
+      translatedTexts.forEach((translatedText, i) => {
         const originalIndex = indexMap[i];
         const originalText = textsToTranslate[i];
-        const translatedText = translation.translatedText;
 
         // Cache the translation
         const cacheKey = `${originalText}_${sourceLanguage}_${targetLanguage}`;
@@ -247,11 +233,14 @@ const translateController = {
         targetLanguage
       });
     } catch (error) {
-      console.error('Batch translation error:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Batch translation failed',
-        error: error.message
+      console.error('Batch translation error:', error.message);
+      // Return original texts on error
+      return res.json({
+        success: true,
+        translations: req.body.texts.map(text => ({ original: text, translated: text })),
+        sourceLanguage: req.body.sourceLanguage || 'en',
+        targetLanguage: req.body.targetLanguage,
+        note: 'Batch translation failed - returning original texts'
       });
     }
   },
@@ -268,25 +257,38 @@ const translateController = {
         });
       }
 
-      const request = {
-        parent: `projects/${projectId}/locations/${location}`,
-        content: text
-      };
+      if (!translationEnabled) {
+        return res.json({
+          success: true,
+          language: 'en',
+          confidence: 0,
+          note: 'Detection unavailable - defaulting to English'
+        });
+      }
 
-      const [response] = await translationClient.detectLanguage(request);
-      const detectedLanguage = response.languages[0];
+      // Use Google Translate API v2 for detection
+      const url = `https://translation.googleapis.com/language/translate/v2/detect`;
+      const response = await axios.post(url, null, {
+        params: {
+          q: text,
+          key: GOOGLE_TRANSLATE_API_KEY
+        }
+      });
+
+      const detectedLanguage = response.data.data.detections[0][0];
 
       res.json({
         success: true,
-        language: detectedLanguage.languageCode,
+        language: detectedLanguage.language,
         confidence: detectedLanguage.confidence
       });
     } catch (error) {
-      console.error('Language detection error:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Language detection failed',
-        error: error.message
+      console.error('Language detection error:', error.message);
+      res.json({
+        success: true,
+        language: 'en',
+        confidence: 0,
+        note: 'Detection failed - defaulting to English'
       });
     }
   },
