@@ -32,36 +32,35 @@ const LanguageSelector = ({ variant = 'dropdown', className = '' }) => {
       <div className={`relative ${className}`} ref={dropdownRef}>
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="flex items-center space-x-1 text-sm text-gray-600 hover:text-orange-600 transition-colors min-w-[50px]"
+          className="flex items-center space-x-1 text-sm text-gray-600 hover:text-[#c41e3a] transition-colors"
           aria-label="Select language"
         >
-          <FiGlobe size={16} className="flex-shrink-0" />
-          <span className="font-medium whitespace-nowrap">{currentLang.nativeName}</span>
+          <FiGlobe size={14} className="flex-shrink-0" />
+          <span className="font-medium text-xs sm:text-sm whitespace-nowrap">{currentLang.nativeName}</span>
           <FiChevronDown 
-            size={14} 
+            size={12} 
             className={`transition-transform flex-shrink-0 ${isOpen ? 'rotate-180' : ''}`} 
           />
           {isTranslating && (
-            <div className="w-3 h-3 border-2 border-orange-500 border-t-transparent rounded-full animate-spin ml-1 flex-shrink-0" />
+            <div className="w-2.5 h-2.5 border-2 border-[#c41e3a] border-t-transparent rounded-full animate-spin ml-1 flex-shrink-0" />
           )}
         </button>
 
         {isOpen && (
-          <div className="absolute right-0 top-full mt-2 bg-white rounded-lg shadow-xl border border-gray-200 py-2 min-w-[180px] z-50">
+          <div className="fixed sm:absolute left-2 right-2 sm:left-auto sm:right-0 top-14 sm:top-full sm:mt-1 bg-white rounded-lg shadow-xl border border-gray-200 py-1 sm:min-w-[140px] z-[200] max-h-[60vh] overflow-y-auto">
             {languages.map((lang) => (
               <button
                 key={lang.code}
                 onClick={() => handleLanguageChange(lang.code)}
-                className={`w-full px-4 py-2 text-left flex items-center justify-between hover:bg-gray-50 transition-colors ${
-                  lang.code === currentLanguage ? 'bg-orange-50 text-orange-600' : 'text-gray-700'
+                className={`w-full px-4 py-3 sm:px-3 sm:py-2 text-left flex items-center justify-between hover:bg-gray-100 transition-colors text-sm ${
+                  lang.code === currentLanguage ? 'bg-red-50' : 'bg-white'
                 }`}
               >
-                <div>
-                  <span className="block font-medium">{lang.nativeName}</span>
-                  <span className="text-xs text-gray-500">{lang.name}</span>
-                </div>
+                <span className={`font-medium ${lang.code === currentLanguage ? 'text-[#c41e3a]' : 'text-gray-800'}`}>
+                  {lang.nativeName}
+                </span>
                 {lang.code === currentLanguage && (
-                  <FiCheck size={16} className="text-orange-600" />
+                  <FiCheck size={16} className="text-[#c41e3a]" />
                 )}
               </button>
             ))}

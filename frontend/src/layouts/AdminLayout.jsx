@@ -147,7 +147,7 @@ const AdminLayout = () => {
 
         {/* Footer */}
         <footer className="bg-white border-t border-gray-200 py-3 sm:py-4 px-4 sm:px-6 text-center text-xs sm:text-sm text-gray-500">
-          <p>2024 NamSev Admin - Ganapathipalayam Panchayat</p>
+          <p>© 2024 NamSev Admin - Ganapathipalayam Gram Panchayat, Palladam, Tirupur - 641605</p>
         </footer>
       </div>
     </div>

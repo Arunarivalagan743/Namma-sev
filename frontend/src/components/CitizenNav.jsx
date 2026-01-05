@@ -12,6 +12,7 @@ const CitizenNav = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const isLoggedIn = !!currentUser;
 
   // Close menu on route change
   useEffect(() => {
@@ -43,13 +44,19 @@ const CitizenNav = () => {
 
   const isActive = (path) => location.pathname === path;
 
-  const navLinks = [
+  // Navigation links - show different links based on login status
+  const navLinks = isLoggedIn ? [
     { path: '/', label: t('home'), icon: FiHome },
     { path: '/new-complaint', label: t('fileComplaint'), icon: FiPlusCircle },
     { path: '/my-complaints', label: t('myComplaints'), icon: FiFileText },
     { path: '/announcements', label: t('announcements'), icon: FiBell },
     { path: '/calendar', label: 'Calendar', icon: FiCalendar },
     { path: '/profile', label: t('profile'), icon: FiUser },
+  ] : [
+    { path: '/', label: t('home'), icon: FiHome },
+    { path: '/announcements', label: t('announcements'), icon: FiBell },
+    { path: '/calendar', label: 'Calendar', icon: FiCalendar },
+    { path: '/schemes', label: 'Schemes', icon: FiFileText },
   ];
 
   return (
@@ -92,16 +99,27 @@ const CitizenNav = () => {
             {/* Right Side */}
             <div className="flex items-center space-x-2 sm:space-x-3 flex-shrink-0">
               <LanguageSelector variant="compact" />
-              <span className="hidden xl:inline text-gray-600 text-sm truncate max-w-[120px]">
-                {userProfile?.name || currentUser?.email?.split('@')[0]}
-              </span>
-              <button 
-                onClick={handleLogout} 
-                className="hidden lg:flex items-center space-x-1 text-[#c41e3a] hover:text-[#a01830] text-sm font-medium transition-colors"
-              >
-                <FiLogOut size={16} />
-                <span>{t('logout')}</span>
-              </button>
+              {isLoggedIn ? (
+                <>
+                  <span className="hidden xl:inline text-gray-600 text-sm truncate max-w-[120px]">
+                    {userProfile?.name || currentUser?.email?.split('@')[0]}
+                  </span>
+                  <button 
+                    onClick={handleLogout} 
+                    className="hidden lg:flex items-center space-x-1 text-[#c41e3a] hover:text-[#a01830] text-sm font-medium transition-colors"
+                  >
+                    <FiLogOut size={16} />
+                    <span>{t('logout')}</span>
+                  </button>
+                </>
+              ) : (
+                <Link 
+                  to="/login" 
+                  className="hidden lg:flex items-center space-x-1 bg-[#c41e3a] text-white px-4 py-2 rounded text-sm font-medium hover:bg-[#a01830] transition-colors"
+                >
+                  <span>{t('login')}</span>
+                </Link>
+              )}
             </div>
           </div>
         </div>
@@ -133,20 +151,29 @@ const CitizenNav = () => {
             </button>
           </div>
           
-          {/* User Info */}
-          <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 sm:w-14 sm:h-14 bg-white/20 rounded-full flex items-center justify-center">
-              <FiUser className="text-white" size={24} />
+          {/* User Info / Guest Info */}
+          {isLoggedIn ? (
+            <div className="flex items-center space-x-3">
+              <div className="w-12 h-12 sm:w-14 sm:h-14 bg-white/20 rounded-full flex items-center justify-center">
+                <FiUser className="text-white" size={24} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-white font-semibold text-sm sm:text-base truncate">
+                  {userProfile?.name || 'User'}
+                </p>
+                <p className="text-white/70 text-xs sm:text-sm truncate">
+                  {currentUser?.email}
+                </p>
+              </div>
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-white font-semibold text-sm sm:text-base truncate">
-                {userProfile?.name || 'User'}
-              </p>
-              <p className="text-white/70 text-xs sm:text-sm truncate">
-                {currentUser?.email}
+          ) : (
+            <div className="text-center">
+              <p className="text-white font-semibold text-sm sm:text-base">Welcome to NamSev</p>
+              <p className="text-white/70 text-xs sm:text-sm mt-1">
+                Ganapathipalayam Gram Panchayat
               </p>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Navigation Links */}
@@ -174,15 +201,34 @@ const CitizenNav = () => {
           </div>
         </div>
 
-        {/* Logout Button */}
+        {/* Bottom Button - Login/Logout */}
         <div className="absolute bottom-0 left-0 right-0 p-3 sm:p-4 border-t bg-gray-50">
-          <button 
-            onClick={handleLogout}
-            className="flex items-center justify-center space-x-2 w-full px-4 py-3 bg-[#c41e3a]/10 text-[#c41e3a] rounded-xl font-medium hover:bg-[#c41e3a] hover:text-white transition-all"
-          >
-            <FiLogOut size={18} />
-            <span className="text-sm sm:text-base">{t('logout')}</span>
-          </button>
+          {isLoggedIn ? (
+            <button 
+              onClick={handleLogout}
+              className="flex items-center justify-center space-x-2 w-full px-4 py-3 bg-[#c41e3a]/10 text-[#c41e3a] rounded-xl font-medium hover:bg-[#c41e3a] hover:text-white transition-all"
+            >
+              <FiLogOut size={18} />
+              <span className="text-sm sm:text-base">{t('logout')}</span>
+            </button>
+          ) : (
+            <div className="flex gap-2">
+              <Link 
+                to="/login"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex-1 flex items-center justify-center space-x-2 px-4 py-3 bg-[#c41e3a] text-white rounded-xl font-medium hover:bg-[#a01830] transition-all"
+              >
+                <span className="text-sm sm:text-base">{t('login')}</span>
+              </Link>
+              <Link 
+                to="/register"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex-1 flex items-center justify-center space-x-2 px-4 py-3 bg-[#1e3a5f] text-white rounded-xl font-medium hover:bg-[#2c5282] transition-all"
+              >
+                <span className="text-sm sm:text-base">{t('register')}</span>
+              </Link>
+            </div>
+          )}
         </div>
       </div>
     </>

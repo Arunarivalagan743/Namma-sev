@@ -287,8 +287,9 @@ const HomePage = () => {
         {/* Menu Footer */}
         <div className="p-4 border-t border-white/20">
           <div className="text-white/60 text-xs text-center">
-            <p>Ganapathipalayam Gram Panchayat</p>
-            <p className="mt-1">contact@grampanchayat.gov.in</p>
+            <p className="font-medium text-white/80">Ganapathipalayam Gram Panchayat</p>
+            <p className="mt-1">Palladam Taluk, Tirupur - 641605</p>
+            <p className="mt-1">ganapathiplayampanchayat@gmail.com</p>
           </div>
         </div>
       </div>
@@ -316,7 +317,7 @@ const HomePage = () => {
               <div className="hidden lg:flex items-center space-x-6">
                 <div className="flex items-center text-white/80 text-sm">
                   <FiMail className="mr-2" />
-                  <span>contact@grampanchayat.gov.in</span>
+                  <span>panchayat.office@gmail.com</span>
                 </div>
                 <Link 
                   to="/schemes"
@@ -374,6 +375,14 @@ const HomePage = () => {
         <div className="relative z-10 h-full min-h-screen flex items-center">
           <div className="container mx-auto px-4 sm:px-6 pt-24 sm:pt-32 md:pt-40 pb-16">
             <div className="max-w-full sm:max-w-xl md:max-w-2xl lg:max-w-3xl">
+              {/* Panchayat Badge */}
+              <div className="inline-flex items-center bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-4 py-2 mb-4 sm:mb-6">
+                <FiMapPin className="text-[#c41e3a] mr-2" size={16} />
+                <span className="text-white/90 text-xs sm:text-sm font-medium">
+                  Ganapathipalayam Gram Panchayat • Palladam, Tirupur - 641605
+                </span>
+              </div>
+
               {/* Main Headline */}
               <h1 className="hero-title text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-serif text-white leading-tight mb-4 sm:mb-6">
                 {t('heroTitle')}

@@ -101,6 +101,9 @@ function App() {
           <Route path="/track" element={<TrackComplaint />} />
           <Route path="/track/:trackingId" element={<TrackComplaint />} />
           <Route path="/public-complaints" element={<PublicComplaints />} />
+          
+          {/* Public Announcements - Accessible without login */}
+          <Route path="/announcements" element={<Announcements />} />
 
           {/* Citizen Protected Routes - Pages have their own CitizenNav */}
           <Route element={<ProtectedRoute />}>
@@ -109,7 +112,6 @@ function App() {
             <Route path="/new-complaint" element={<NewComplaint />} />
             <Route path="/citizen/complaints/new" element={<NewComplaint />} />
             <Route path="/citizen/complaints/:id" element={<ComplaintDetail />} />
-            <Route path="/announcements" element={<Announcements />} />
             <Route path="/profile" element={<Profile />} />
           </Route>
 

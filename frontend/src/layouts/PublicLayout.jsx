@@ -53,8 +53,11 @@ const PublicLayout = () => {
             <div className="sm:col-span-2 md:col-span-1">
               <h3 className="text-base sm:text-lg font-semibold mb-2 sm:mb-3">NamSev</h3>
               <p className="text-gray-300 text-xs sm:text-sm">
-                Official Civic Engagement Platform for Ganapathipalayam Panchayat. 
+                Official Civic Engagement Platform for Ganapathipalayam Gram Panchayat. 
                 Report issues, track progress, and stay updated with local governance.
+              </p>
+              <p className="text-gray-400 text-xs mt-2">
+                Serving the residents of Ganapathipalayam village under Palladam Taluk, Tirupur District.
               </p>
             </div>
             <div>
@@ -66,18 +69,19 @@ const PublicLayout = () => {
               </ul>
             </div>
             <div>
-              <h3 className="text-base sm:text-lg font-semibold mb-2 sm:mb-3">Contact</h3>
+              <h3 className="text-base sm:text-lg font-semibold mb-2 sm:mb-3">Contact Us</h3>
               <ul className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm text-gray-300">
-                <li>2/783(41, Moogambigai Nagar</li>
-                <li>Ganapathipalayam, Palladam</li>
-                <li>Tamil Nadu 641605</li>
-                <li className="break-all">Email: panchayat.office@gmail.com</li>
-                <li>Phone: +91 XXXXXXXXXX</li>
+                <li className="font-medium text-white">Ganapathipalayam Gram Panchayat Office</li>
+                <li>2/783(41), Moogambigai Nagar</li>
+                <li>Ganapathipalayam, Palladam Taluk</li>
+                <li>Tirupur District, Tamil Nadu - 641605</li>
+                <li className="pt-2">📧 panchayat.office@gmail.com</li>
+                <li>📞 +91 XXXXXXXXXX</li>
               </ul>
             </div>
           </div>
           <div className="border-t border-gray-700 mt-6 sm:mt-8 pt-4 sm:pt-6 text-center text-xs sm:text-sm text-gray-400">
-            <p>2024 NamSev - Ganapathipalayam Panchayat. All rights reserved.</p>
+            <p>© 2024 NamSev - Ganapathipalayam Gram Panchayat, Palladam, Tirupur. All rights reserved.</p>
           </div>
         </div>
       </footer>
