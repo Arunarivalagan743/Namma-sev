@@ -21,8 +21,26 @@ const LoginPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!email || !password) {
-      toast.error('Please fill in all fields');
+    // Validation with specific error messages
+    if (!email && !password) {
+      toast.error('Please enter your email and password to sign in.');
+      return;
+    }
+    
+    if (!email) {
+      toast.error('Please enter your email address.');
+      return;
+    }
+    
+    if (!password) {
+      toast.error('Please enter your password.');
+      return;
+    }
+    
+    // Email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      toast.error('Please enter a valid email address (e.g., yourname@example.com).');
       return;
     }
 
@@ -67,15 +85,65 @@ const LoginPage = () => {
     } catch (error) {
       console.error('Login error:', error);
       
-      let message = 'Login failed';
-      if (error.code === 'auth/user-not-found') {
-        message = 'No account found with this email';
-      } else if (error.code === 'auth/wrong-password') {
-        message = 'Incorrect password';
-      } else if (error.code === 'auth/invalid-email') {
-        message = 'Invalid email address';
-      } else if (error.code === 'auth/too-many-requests') {
-        message = 'Too many attempts. Please try again later';
+      let message = 'Login failed. Please try again.';
+      
+      // Handle all Firebase Auth error codes with user-friendly messages
+      switch (error.code) {
+        // Email related errors
+        case 'auth/user-not-found':
+          message = 'This email is not registered. Please create a new account by clicking "Register" below.';
+          break;
+        case 'auth/invalid-email':
+          message = 'Please enter a valid email address (e.g., yourname@example.com).';
+          break;
+        case 'auth/user-disabled':
+          message = 'This account has been disabled. Please contact the administrator for assistance.';
+          break;
+        
+        // Password related errors
+        case 'auth/wrong-password':
+          message = 'Incorrect password. Please check your password and try again.';
+          break;
+        case 'auth/invalid-credential':
+          message = 'Email not registered or incorrect password. If you don\'t have an account, please click "Register" below to create one.';
+          break;
+        
+        // Rate limiting and security
+        case 'auth/too-many-requests':
+          message = 'Too many failed login attempts. Please wait a few minutes before trying again, or reset your password.';
+          break;
+        
+        // Network errors
+        case 'auth/network-request-failed':
+          message = 'Network error. Please check your internet connection and try again.';
+          break;
+        
+        // Account existence errors
+        case 'auth/invalid-login-credentials':
+          message = 'Email not registered or incorrect password. If you don\'t have an account, please click "Register" below to create one.';
+          break;
+        
+        // Operation errors
+        case 'auth/operation-not-allowed':
+          message = 'Login is temporarily unavailable. Please try again later.';
+          break;
+        
+        // Timeout
+        case 'auth/timeout':
+          message = 'Request timed out. Please check your connection and try again.';
+          break;
+        
+        default:
+          // Check for generic error messages
+          if (error.message?.includes('network')) {
+            message = 'Network error. Please check your internet connection.';
+          } else if (error.message?.includes('password')) {
+            message = 'Incorrect password. Please try again.';
+          } else if (error.message?.includes('email')) {
+            message = 'Invalid email address. Please check and try again.';
+          } else {
+            message = 'Unable to sign in. Please check your credentials and try again.';
+          }
       }
       
       toast.error(message);

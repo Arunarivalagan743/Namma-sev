@@ -41,18 +41,42 @@ const RegisterPage = () => {
   const handleStep1 = async (e) => {
     e.preventDefault();
     
-    if (!email || !password || !confirmPassword) {
-      toast.error('Please fill in all fields');
+    // Validation with specific error messages
+    if (!email) {
+      toast.error('Please enter your email address.');
+      return;
+    }
+    
+    // Email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      toast.error('Please enter a valid email address (e.g., yourname@example.com).');
+      return;
+    }
+    
+    if (!password) {
+      toast.error('Please enter a password.');
+      return;
+    }
+    
+    if (password.length < 6) {
+      toast.error('Password must be at least 6 characters long.');
+      return;
+    }
+    
+    // Password strength validation
+    if (!/[a-zA-Z]/.test(password)) {
+      toast.error('Password should contain at least one letter.');
+      return;
+    }
+    
+    if (!confirmPassword) {
+      toast.error('Please confirm your password.');
       return;
     }
 
     if (password !== confirmPassword) {
-      toast.error('Passwords do not match');
-      return;
-    }
-
-    if (password.length < 6) {
-      toast.error('Password must be at least 6 characters');
+      toast.error('Passwords do not match. Please make sure both passwords are the same.');
       return;
     }
 
@@ -65,13 +89,59 @@ const RegisterPage = () => {
     } catch (error) {
       console.error('Signup error:', error);
       
-      let message = 'Registration failed';
-      if (error.code === 'auth/email-already-in-use') {
-        message = 'Email already registered. Please login.';
-      } else if (error.code === 'auth/invalid-email') {
-        message = 'Invalid email address';
-      } else if (error.code === 'auth/weak-password') {
-        message = 'Password is too weak';
+      let message = 'Registration failed. Please try again.';
+      
+      // Handle all Firebase Auth error codes with user-friendly messages
+      switch (error.code) {
+        // Email related errors
+        case 'auth/email-already-in-use':
+          message = 'This email is already registered. Please login instead or use a different email.';
+          break;
+        case 'auth/invalid-email':
+          message = 'Please enter a valid email address (e.g., yourname@example.com).';
+          break;
+        
+        // Password related errors
+        case 'auth/weak-password':
+          message = 'Password is too weak. Please use at least 6 characters with a mix of letters and numbers.';
+          break;
+        
+        // Operation errors
+        case 'auth/operation-not-allowed':
+          message = 'Registration is temporarily unavailable. Please try again later.';
+          break;
+        
+        // Network errors
+        case 'auth/network-request-failed':
+          message = 'Network error. Please check your internet connection and try again.';
+          break;
+        
+        // Rate limiting
+        case 'auth/too-many-requests':
+          message = 'Too many registration attempts. Please wait a few minutes before trying again.';
+          break;
+        
+        // Timeout
+        case 'auth/timeout':
+          message = 'Request timed out. Please check your connection and try again.';
+          break;
+        
+        // Internal errors
+        case 'auth/internal-error':
+          message = 'An internal error occurred. Please try again later.';
+          break;
+        
+        default:
+          // Check for generic error messages
+          if (error.message?.includes('network')) {
+            message = 'Network error. Please check your internet connection.';
+          } else if (error.message?.includes('email')) {
+            message = 'There was an issue with your email. Please check and try again.';
+          } else if (error.message?.includes('password')) {
+            message = 'There was an issue with your password. Please use at least 6 characters.';
+          } else {
+            message = 'Unable to create account. Please try again later.';
+          }
       }
       
       toast.error(message);
@@ -83,13 +153,46 @@ const RegisterPage = () => {
   const handleStep2 = async (e) => {
     e.preventDefault();
     
-    if (!name || !phone || !address) {
-      toast.error('Please fill in all required fields');
+    // Validation with specific error messages
+    if (!name) {
+      toast.error('Please enter your full name.');
+      return;
+    }
+    
+    if (name.trim().length < 2) {
+      toast.error('Please enter a valid name (at least 2 characters).');
+      return;
+    }
+    
+    if (!phone) {
+      toast.error('Please enter your phone number.');
       return;
     }
 
-    if (phone.length < 10) {
-      toast.error('Please enter a valid phone number');
+    if (phone.length !== 10) {
+      toast.error('Please enter a valid 10-digit phone number.');
+      return;
+    }
+    
+    // Validate phone starts with valid Indian mobile prefix
+    if (!/^[6-9]/.test(phone)) {
+      toast.error('Please enter a valid Indian mobile number starting with 6, 7, 8, or 9.');
+      return;
+    }
+    
+    if (!address) {
+      toast.error('Please enter your residential address.');
+      return;
+    }
+    
+    if (address.trim().length < 10) {
+      toast.error('Please enter a complete address (at least 10 characters).');
+      return;
+    }
+    
+    // Validate Aadhaar if provided
+    if (aadhaarLast4 && aadhaarLast4.length !== 4) {
+      toast.error('Please enter exactly 4 digits of your Aadhaar number.');
       return;
     }
 
@@ -114,15 +217,57 @@ const RegisterPage = () => {
     } catch (error) {
       console.error('Profile registration error:', error);
       
-      if (error.response?.status === 409) {
-        toast.error('Account already exists. Please login instead.');
-        // Optionally redirect to login
-        setTimeout(() => {
-          navigate('/login');
-        }, 2000);
-      } else {
-        toast.error(error.response?.data?.message || 'Failed to complete registration');
+      let message = 'Failed to complete registration. Please try again.';
+      
+      // Handle different HTTP status codes
+      const status = error.response?.status;
+      
+      switch (status) {
+        case 400:
+          message = error.response?.data?.message || 'Invalid information provided. Please check your details and try again.';
+          break;
+        case 401:
+          message = 'Session expired. Please login again to complete registration.';
+          break;
+        case 403:
+          message = 'Access denied. You do not have permission to perform this action.';
+          break;
+        case 404:
+          message = 'Service not found. Please try again later.';
+          break;
+        case 409:
+          message = 'An account with this information already exists. Please login instead.';
+          toast.error(message);
+          setTimeout(() => {
+            navigate('/login');
+          }, 2000);
+          return;
+        case 422:
+          message = error.response?.data?.message || 'Invalid data provided. Please check your information.';
+          break;
+        case 429:
+          message = 'Too many requests. Please wait a moment and try again.';
+          break;
+        case 500:
+          message = 'Server error. Please try again later or contact support.';
+          break;
+        case 502:
+        case 503:
+        case 504:
+          message = 'Service temporarily unavailable. Please try again in a few minutes.';
+          break;
+        default:
+          // Handle network or other errors
+          if (error.message?.includes('Network Error') || error.code === 'ERR_NETWORK') {
+            message = 'Network error. Please check your internet connection and try again.';
+          } else if (error.message?.includes('timeout')) {
+            message = 'Request timed out. Please check your connection and try again.';
+          } else if (error.response?.data?.message) {
+            message = error.response.data.message;
+          }
       }
+      
+      toast.error(message);
     } finally {
       setLoading(false);
     }
