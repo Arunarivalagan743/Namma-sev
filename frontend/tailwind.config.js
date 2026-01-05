@@ -28,7 +28,8 @@ export default {
           maroon: '#c41e3a',
           'maroon-dark': '#a01830',
           cream: '#f9fafb',
-          gray: '#64748b'
+          gray: '#64748b',
+          
         }
       }
     },
