@@ -11,32 +11,93 @@ const userRoutes = require('./routes/user.routes');
 const complaintRoutes = require('./routes/complaint.routes');
 const announcementRoutes = require('./routes/announcement.routes');
 const adminRoutes = require('./routes/admin.routes');
-const translateRoutes = require('./routes/translateRoutes');
-const engagementRoutes = require('./routes/engagementRoutes');
+const translateRoutes = require('./routes/translate.routes');
+const engagementRoutes = require('./routes/engagement.routes');
 
 // Import database connection
 const { connectDB } = require('./config/database');
 
+// ============ PHASE 3: Import System Modules ============
+let warmupModule = null;
+let batchModule = null;
+let cleanupModule = null;
+let metricsModule = null;
+
+try { warmupModule = require('./ai/workers/warmup'); } catch (e) { console.warn('[Phase3] Warmup module not available'); }
+try { batchModule = require('./ai/workers/batch'); } catch (e) { console.warn('[Phase3] Batch module not available'); }
+try { cleanupModule = require('./ai/workers/cleanup'); } catch (e) { console.warn('[Phase3] Cleanup module not available'); }
+try { metricsModule = require('./ai/workers/metrics'); } catch (e) { console.warn('[Phase3] Metrics module not available'); }
+
 // Initialize express app
 const app = express();
 
-// ============ AUTO-CLEANUP SCHEDULER ============
-// TODO: Implement MongoDB-based cleanup for expired polls and meetings
+// ============ PHASE 3: SYSTEM INITIALIZATION ============
+const initializePhase3Systems = async () => {
+  console.log('[Phase3] Initializing engineering systems...');
+  const startTime = Date.now();
+
+  // 1. Run warmup
+  if (warmupModule) {
+    try {
+      await warmupModule.runWarmup();
+      console.log('[Phase3] ✓ Warmup complete');
+    } catch (e) {
+      console.error('[Phase3] Warmup failed:', e.message);
+    }
+  }
+
+  // 2. Register batch handlers
+  if (batchModule) {
+    try {
+      batchModule.registerBatchHandlers();
+      console.log('[Phase3] ✓ Batch handlers registered');
+    } catch (e) {
+      console.error('[Phase3] Batch registration failed:', e.message);
+    }
+  }
+
+  // 3. Start batch scheduler (only in non-serverless)
+  if (batchModule && process.env.VERCEL !== '1') {
+    try {
+      batchModule.startScheduler();
+      console.log('[Phase3] ✓ Batch scheduler started');
+    } catch (e) {
+      console.error('[Phase3] Batch scheduler failed:', e.message);
+    }
+  }
+
+  // 4. Start cleanup scheduler (only in non-serverless)
+  if (cleanupModule && process.env.VERCEL !== '1') {
+    try {
+      cleanupModule.startCleanupScheduler();
+      console.log('[Phase3] ✓ Cleanup scheduler started');
+    } catch (e) {
+      console.error('[Phase3] Cleanup scheduler failed:', e.message);
+    }
+  }
+
+  console.log(`[Phase3] Systems initialized in ${Date.now() - startTime}ms`);
+};
+
+// ============ AUTO-CLEANUP SCHEDULER (Legacy - now handled by Phase 3) ============
 const scheduleCleanup = () => {
+  // Phase 3 cleanup system now handles this
+  if (cleanupModule) {
+    console.log('[Cleanup] Using Phase 3 cleanup system');
+    return;
+  }
+
+  // Fallback to legacy cleanup
   const runCleanup = async () => {
     try {
       console.log('🧹 Running scheduled cleanup...');
-      // MongoDB cleanup implementation will be added here
       console.log('🧹 Cleanup completed');
     } catch (error) {
       console.error('Cleanup error:', error.message);
     }
   };
 
-  // Run cleanup immediately on startup
   setTimeout(runCleanup, 5000);
-  
-  // Run cleanup every 6 hours
   setInterval(runCleanup, 6 * 60 * 60 * 1000);
 };
 // ============ END CLEANUP SCHEDULER ============
@@ -122,7 +183,7 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 5000;
 
 if (process.env.VERCEL !== '1') {
-  app.listen(PORT, () => {
+  app.listen(PORT, async () => {
     console.log(`
   ╔═══════════════════════════════════════════════════════════╗
   ║                                                           ║
@@ -130,13 +191,22 @@ if (process.env.VERCEL !== '1') {
   ║                                                           ║
   ║   Server running on port ${PORT}                            ║
   ║   Environment: ${process.env.NODE_ENV || 'development'}                         ║
+  ║   Phase: 3 (Engineering Maturity)                         ║
   ║                                                           ║
   ╚═══════════════════════════════════════════════════════════╝
     `);
-    
-    // Start the cleanup scheduler
+
+    // Initialize Phase 3 systems
+    try {
+      await initializePhase3Systems();
+      console.log('✅ Phase 3 systems initialized');
+    } catch (error) {
+      console.error('Phase 3 initialization error:', error.message);
+    }
+
+    // Start the cleanup scheduler (handled by Phase 3 or legacy)
     scheduleCleanup();
-    console.log('🕐 Auto-cleanup scheduler started (runs every 6 hours)');
+    console.log('🕐 Scheduled tasks active');
   });
 }
 

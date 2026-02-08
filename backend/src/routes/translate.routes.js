@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const translateController = require('../controllers/translateController');
+const translateController = require('../controllers/translate.controller');
 
 // Get supported languages (public)
 router.get('/languages', translateController.getSupportedLanguages);

@@ -8,23 +8,9 @@ node_modules/
 .env.development
 .env.production
 
-# Firebase service account (SENSITIVE - DO NOT COMMIT)
-firebase-service-account.json
-*-service-account.json
-backend/firebase-service-account.json
-backend/src/config/firebase-service-account.json
-backend/src/config/google-translate-service-account.json
-
-# Google Cloud credentials (SENSITIVE - DO NOT COMMIT)
-google-translate-service-account.json
-google-*.json
-service-account*.json
-*.json.bak
-
 # Build outputs
 dist/
 build/
-.vite/
 
 # Logs
 logs/
@@ -49,6 +35,52 @@ tmp/
 temp/
 *.tmp
 
+# ============================================
+# AI/ML SPECIFIC EXCLUSIONS
+# ============================================
+
+# AI Model files (large binaries)
+ai-models/
+*.onnx
+*.gguf
+*.bin
+*.h5
+*.pb
+*.pt
+*.pth
+*.safetensors
+
+# Embeddings and vector data
+embeddings/
+*.npy
+*.npz
+vectors/
+
+# AI Cache directories
+cache/
+ai-cache/
+.cache/
+
+# Training data (potentially sensitive)
+training-data/
+datasets/
+
+# Model weights and checkpoints
+checkpoints/
+weights/
+
+# Tokenizer files
+*.vocab
+*.merges
+
+# Quantized model files
+*_quantized.*
+*_int8.*
+
 # Cache
 .cache/
 .eslintcache
+
+
+
+docs

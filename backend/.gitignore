@@ -8,24 +8,19 @@ node_modules/
 .env.production
 .env.*.local
 
-# Firebase service account keys (SENSITIVE - DO NOT COMMIT)
+# Credentials & Secrets (SENSITIVE - DO NOT COMMIT)
 firebase-service-account.json
-*-service-account.json
-*.json.bak
-
-# Google Cloud service accounts (SENSITIVE - DO NOT COMMIT)
 google-translate-service-account.json
+*-service-account.json
 google-*.json
 service-account*.json
+*.json.bak
 
 # Config folder secrets
 src/config/firebase-service-account.json
 src/config/google-translate-service-account.json
 src/config/*.json
 !src/config/schema-engagement.sql
-
-# Database credentials
-database/*.sql.bak
 
 # Logs
 logs/
@@ -55,3 +50,4 @@ coverage/
 tmp/
 temp/
 *.tmp
+

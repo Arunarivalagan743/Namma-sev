@@ -24,6 +24,10 @@ router.get('/categories', (req, res) => {
 
 // ==================== PROTECTED ROUTES ====================
 
+// Phase 4: Pre-submission enrichment and duplicate check
+router.post('/preview/enrich', verifyToken, requireApprovedUser, complaintController.previewEnrichment);
+router.post('/preview/duplicates', verifyToken, requireApprovedUser, complaintController.checkDuplicates);
+
 // Create new complaint
 router.post('/', verifyToken, requireApprovedUser, complaintController.createComplaint);
 
@@ -32,6 +36,12 @@ router.get('/my-complaints', verifyToken, requireApprovedUser, complaintControll
 
 // Get single complaint with timeline
 router.get('/:id', verifyToken, requireApprovedUser, complaintController.getComplaint);
+
+// Phase 4: Get complaint summary
+router.get('/:id/summary', verifyToken, requireApprovedUser, complaintController.getComplaintSummary);
+
+// Phase 5: Submit AI feedback
+router.post('/ai-feedback', verifyToken, requireApprovedUser, complaintController.submitAIFeedback);
 
 // Submit feedback for resolved complaint
 router.post('/:id/feedback', verifyToken, requireApprovedUser, complaintController.submitFeedback);

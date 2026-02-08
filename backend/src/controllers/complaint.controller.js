@@ -1,6 +1,15 @@
 const { Complaint, ComplaintHistory, User } = require('../models');
 const { v4: uuidv4 } = require('uuid');
 
+// Import AI services for intelligent processing
+let aiServices = null;
+try {
+  aiServices = require('../ai');
+  console.log('✅ AI services loaded for complaint processing');
+} catch (err) {
+  console.log('⚠️ AI services not available:', err.message);
+}
+
 const COMPLAINT_CATEGORIES = [
   'Road & Infrastructure',
   'Water Supply',
@@ -30,7 +39,10 @@ const ESTIMATED_DAYS = {
 };
 
 /**
- * Create new complaint with enhanced features
+ * Create new complaint with AI-enhanced features
+ * - Auto-priority scoring
+ * - Duplicate detection
+ * - Category suggestion (if not provided)
  */
 const createComplaint = async (req, res) => {
   try {
@@ -40,7 +52,7 @@ const createComplaint = async (req, res) => {
       description, 
       category, 
       location, 
-      priority = 'normal',
+      priority,
       imageUrls = [],
       contactPhone,
       wardNumber,
@@ -74,13 +86,47 @@ const createComplaint = async (req, res) => {
       });
     }
 
-    // Validate priority
-    if (!PRIORITY_LEVELS.includes(priority)) {
-      return res.status(400).json({ 
-        error: 'Validation Error',
-        message: 'Invalid priority level',
-        validPriorities: PRIORITY_LEVELS
-      });
+    // AI-enhanced processing
+    let aiProcessing = null;
+    let finalPriority = priority || 'normal';
+    let similarComplaints = [];
+
+    if (aiServices) {
+      try {
+        const text = `${title} ${description}`;
+
+        // AI Priority scoring (if not manually set)
+        if (!priority) {
+          const priorityResult = aiServices.priorityService.scorePriority(title, description, category);
+          finalPriority = priorityResult.priority;
+          aiProcessing = {
+            priorityScored: true,
+            priorityConfidence: priorityResult.confidence,
+            priorityReason: priorityResult.reason
+          };
+          console.log(`🤖 AI Priority: ${finalPriority} (${priorityResult.confidence * 100}% confidence)`);
+        }
+
+        // Duplicate detection
+        similarComplaints = await aiServices.duplicateService.findSimilar(text, userId, {
+          category,
+          maxResults: 3
+        });
+
+        if (similarComplaints.length > 0) {
+          console.log(`🔍 Found ${similarComplaints.length} similar complaints`);
+          aiProcessing = aiProcessing || {};
+          aiProcessing.duplicatesFound = similarComplaints.length;
+          aiProcessing.topSimilarity = similarComplaints[0]?.similarity;
+        }
+      } catch (aiError) {
+        console.warn('AI processing error (non-fatal):', aiError.message);
+      }
+    }
+
+    // Validate final priority
+    if (!PRIORITY_LEVELS.includes(finalPriority)) {
+      finalPriority = 'normal';
     }
 
     // Generate complaint ID and tracking ID
@@ -103,7 +149,7 @@ const createComplaint = async (req, res) => {
       title,
       description,
       category,
-      priority,
+      priority: finalPriority,
       location: location || null,
       imageUrl: imageUrl1,
       imageUrl2: imageUrl2,
@@ -122,12 +168,15 @@ const createComplaint = async (req, res) => {
       _id: uuidv4(),
       complaintId,
       status: 'pending',
-      remarks: 'Complaint submitted successfully'
+      remarks: aiProcessing?.priorityScored
+        ? `Complaint submitted. Priority auto-set to ${finalPriority} by AI.`
+        : 'Complaint submitted successfully'
     });
 
     await historyEntry.save();
 
-    res.status(201).json({
+    // Build response
+    const response = {
       success: true,
       message: 'Complaint submitted successfully',
       complaint: {
@@ -135,12 +184,30 @@ const createComplaint = async (req, res) => {
         trackingId,
         title,
         category,
-        priority,
+        priority: finalPriority,
         status: 'pending',
         estimatedResolutionDays: estimatedDays,
         createdAt: new Date()
       }
-    });
+    };
+
+    // Include AI insights if available
+    if (aiProcessing) {
+      response.aiInsights = aiProcessing;
+    }
+
+    // Warn about similar complaints
+    if (similarComplaints.length > 0) {
+      response.similarComplaints = similarComplaints.map(s => ({
+        trackingId: s.trackingId,
+        title: s.title,
+        similarity: Math.round(s.similarity * 100) + '%',
+        status: s.status
+      }));
+      response.warning = `Found ${similarComplaints.length} similar complaint(s). Your complaint has been submitted but may be a duplicate.`;
+    }
+
+    res.status(201).json(response);
 
   } catch (error) {
     console.error('Create complaint error:', error);
@@ -587,6 +654,231 @@ const toggleComplaintVisibility = async (req, res) => {
   }
 };
 
+/**
+ * Preview complaint enrichment before submission (Phase 4)
+ * Non-blocking suggestions for improving complaint quality
+ */
+const previewEnrichment = async (req, res) => {
+  try {
+    const { title, description, category } = req.body;
+
+    if (!title && !description) {
+      return res.status(400).json({ error: 'Title or description is required' });
+    }
+
+    // Check if enrichment service is available
+    if (!aiServices?.enrichmentService) {
+      return res.json({
+        success: true,
+        enrichment: null,
+        message: 'Enrichment service not available'
+      });
+    }
+
+    const enrichment = await aiServices.enrichmentService.enrichComplaint({
+      title: title || '',
+      description: description || '',
+      category: category || 'Other'
+    });
+
+    res.json({
+      success: true,
+      enrichment: {
+        completenessScore: enrichment.completenessScore,
+        suggestions: enrichment.suggestions,
+        missingContext: enrichment.missingContext,
+        qualityIssues: enrichment.qualityIssues,
+        normalizedText: enrichment.normalizedText,
+        normalizationChanges: enrichment.normalizationChanges,
+        language: enrichment.language,
+        latencyMs: enrichment.latencyMs
+      }
+    });
+
+  } catch (error) {
+    console.error('Enrichment preview error:', error);
+    // Non-blocking - return success even if enrichment fails
+    res.json({
+      success: true,
+      enrichment: null,
+      error: 'Enrichment preview failed'
+    });
+  }
+};
+
+/**
+ * Check for duplicate complaints before submission (Phase 4)
+ * Uses semantic similarity for better accuracy
+ */
+const checkDuplicates = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { title, description, category } = req.body;
+
+    if (!title && !description) {
+      return res.status(400).json({ error: 'Title or description is required' });
+    }
+
+    const text = `${title || ''} ${description || ''}`.trim();
+
+    // Check semantic duplicate service first (Phase 4)
+    if (aiServices?.semanticDuplicateService) {
+      const result = await aiServices.semanticDuplicateService.findSemanticDuplicates(
+        text,
+        userId,
+        { category, maxResults: 5 }
+      );
+
+      return res.json({
+        success: true,
+        method: 'semantic',
+        hasDuplicates: result.hasDuplicates,
+        highestSimilarity: result.highestSimilarity,
+        confidenceBand: result.confidenceBand,
+        recommendation: result.recommendation,
+        duplicates: result.duplicates,
+        latencyMs: result.latencyMs
+      });
+    }
+
+    // Fallback to basic duplicate service
+    if (aiServices?.duplicateService) {
+      const duplicates = await aiServices.duplicateService.findSimilar(text, userId, {
+        category,
+        maxResults: 5
+      });
+
+      return res.json({
+        success: true,
+        method: 'basic',
+        hasDuplicates: duplicates.length > 0,
+        duplicates,
+        message: duplicates.length > 0
+          ? `Found ${duplicates.length} similar complaint(s)`
+          : 'No similar complaints found'
+      });
+    }
+
+    // No duplicate service available
+    res.json({
+      success: true,
+      method: null,
+      hasDuplicates: false,
+      message: 'Duplicate detection not available'
+    });
+
+  } catch (error) {
+    console.error('Duplicate check error:', error);
+    // Non-blocking
+    res.json({
+      success: true,
+      hasDuplicates: false,
+      error: 'Duplicate check failed'
+    });
+  }
+};
+
+/**
+ * Get complaint summary with timeline (Phase 4)
+ * Returns automated summary of complaint history
+ */
+const getComplaintSummary = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { id } = req.params;
+
+    // Verify user owns the complaint
+    const complaint = await Complaint.findOne({ _id: id, userId }).lean();
+
+    if (!complaint) {
+      return res.status(404).json({ error: 'Complaint not found' });
+    }
+
+    // Check if summarization service is available
+    if (!aiServices?.summarizationService) {
+      return res.json({
+        success: true,
+        summary: null,
+        message: 'Summarization service not available'
+      });
+    }
+
+    const summary = await aiServices.summarizationService.summarizeComplaint(id);
+
+    if (summary.error) {
+      return res.status(404).json({ error: summary.error });
+    }
+
+    res.json({
+      success: true,
+      summary: {
+        complaint: summary.complaint,
+        timeline: summary.timeline,
+        keyActions: summary.keyActions,
+        statusSummary: summary.statusSummary,
+        textSummary: summary.textSummary,
+        fromCache: summary.fromCache,
+        latencyMs: summary.latencyMs
+      }
+    });
+
+  } catch (error) {
+    console.error('Summary error:', error);
+    res.status(500).json({ error: 'Failed to generate summary' });
+  }
+};
+
+/**
+ * Submit feedback for AI suggestions (Phase 5)
+ * Non-blocking - allows users to rate AI helpfulness
+ */
+const submitAIFeedback = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { targetType, targetId, complaintId, helpful, reason, reasonCategory } = req.body;
+
+    if (!targetType || !targetId) {
+      return res.status(400).json({ error: 'targetType and targetId are required' });
+    }
+
+    // Check if feedback service is available
+    if (!aiServices?.feedbackService) {
+      return res.json({
+        success: true,
+        message: 'Feedback recorded (service not available)',
+        stored: false
+      });
+    }
+
+    const result = await aiServices.feedbackService.submitFeedback({
+      targetType,
+      targetId,
+      complaintId,
+      userId,
+      userRole: 'citizen',
+      feedbackType: helpful ? 'helpful' : 'not_helpful',
+      helpful,
+      reason,
+      reasonCategory
+    });
+
+    res.json({
+      success: result.success,
+      feedbackId: result.feedbackId,
+      message: 'Thank you for your feedback'
+    });
+
+  } catch (error) {
+    console.error('AI feedback error:', error);
+    // Non-blocking - still return success
+    res.json({
+      success: true,
+      message: 'Feedback noted',
+      error: 'Failed to store feedback'
+    });
+  }
+};
+
 module.exports = {
   createComplaint,
   getUserComplaints,
@@ -596,6 +888,12 @@ module.exports = {
   getWards,
   getPublicComplaints,
   toggleComplaintVisibility,
+  // Phase 4
+  previewEnrichment,
+  checkDuplicates,
+  getComplaintSummary,
+  // Phase 5
+  submitAIFeedback,
   COMPLAINT_CATEGORIES,
   PRIORITY_LEVELS
 };

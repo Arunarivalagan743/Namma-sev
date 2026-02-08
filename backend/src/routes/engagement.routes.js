@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const engagementController = require('../controllers/engagementController');
+const engagementController = require('../controllers/engagement.controller');
 const { verifyToken, requireAdmin, optionalAuth, requireApprovedUser } = require('../middleware/auth.middleware');
 
 // ============ PUBLIC ROUTES (No Auth Required) ============

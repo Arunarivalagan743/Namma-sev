@@ -16,6 +16,13 @@ const { PanchayatWork, WorkProgressUpdate } = require('./PanchayatWork');
 const { BudgetCategory, BudgetEntry } = require('./Budget');
 const { FAQ, NewsUpdate } = require('./FAQ');
 
+// Phase 4: Multi-tenant models
+const Tenant = require('./Tenant');
+const TenantConfig = require('./TenantConfig');
+const SuperAdmin = require('./SuperAdmin');
+const TenantAuditLog = require('./TenantAuditLog');
+const TenantBilling = require('./TenantBilling');
+
 module.exports = {
   User,
   Complaint,
@@ -38,5 +45,11 @@ module.exports = {
   BudgetCategory,
   BudgetEntry,
   FAQ,
-  NewsUpdate
+  NewsUpdate,
+  // Phase 4: Multi-tenant models
+  Tenant,
+  TenantConfig,
+  SuperAdmin,
+  TenantAuditLog,
+  TenantBilling
 };

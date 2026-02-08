@@ -3,8 +3,14 @@ const dotenv = require('dotenv');
 
 dotenv.config();
 
-// MongoDB connection string
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://arunarivalagan774:arunarivalagan774@cluster0.jxg7dt3.mongodb.net/namsev?retryWrites=true&w=majority';
+// MongoDB connection string from environment variable
+const MONGODB_URI = process.env.MONGODB_URI;
+
+if (!MONGODB_URI) {
+  console.error('❌ MONGODB_URI is not set in .env file!');
+  console.error('   Please add your MongoDB connection string to .env');
+  process.exit(1);
+}
 
 // Cached connection for serverless
 let cached = global.mongoose;
@@ -39,7 +45,10 @@ const connectDB = async () => {
 
   try {
     cached.conn = await cached.promise;
-    console.log(`Connected to: ${cached.conn.connection.host}`);
+    const dbName = cached.conn.connection.db.databaseName;
+    const host = cached.conn.connection.host;
+    console.log(`📦 Database: ${dbName}`);
+    console.log(`🌐 Host: ${host}`);
     return cached.conn;
   } catch (error) {
     cached.promise = null;
@@ -47,8 +56,6 @@ const connectDB = async () => {
     throw error;
   }
 };
-
-// Test database connection
 const testConnection = async () => {
   try {
     await connectDB();
