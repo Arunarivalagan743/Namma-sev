@@ -30,13 +30,11 @@ const newsSchema = new mongoose.Schema({
   },
   isFeatured: {
     type: Boolean,
-    default: false,
-    index: true
+    default: false
   },
   isPublished: {
     type: Boolean,
-    default: true,
-    index: true
+    default: true
   },
   publishedAt: {
     type: Date,

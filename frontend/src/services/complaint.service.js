@@ -129,6 +129,56 @@ export const complaintService = {
   toggleVisibility: async (id, isPublic) => {
     const response = await api.patch(`/complaints/${id}/visibility`, { isPublic });
     return response.data;
+  },
+
+  // ============ AI FEATURES ============
+
+  /**
+   * Preview enrichment suggestions before submission (Phase 4)
+   * Non-blocking - returns suggestions to improve complaint quality
+   * @param {Object} data - { title, description, category }
+   * @returns {Object} Enrichment result with suggestions
+   */
+  previewEnrichment: async (data) => {
+    try {
+      const response = await api.post('/complaints/preview/enrich', data);
+      return response.data;
+    } catch (error) {
+      console.warn('Enrichment preview failed:', error.message);
+      return { success: true, enrichment: null, error: 'Enrichment unavailable' };
+    }
+  },
+
+  /**
+   * Check for duplicate complaints before submission (Phase 4)
+   * Non-blocking - warns user of similar complaints
+   * @param {Object} data - { title, description, category }
+   * @returns {Object} Duplicate check result
+   */
+  checkDuplicates: async (data) => {
+    try {
+      const response = await api.post('/complaints/preview/duplicates', data);
+      return response.data;
+    } catch (error) {
+      console.warn('Duplicate check failed:', error.message);
+      return { success: true, hasDuplicates: false, error: 'Check unavailable' };
+    }
+  },
+
+  /**
+   * Get AI-generated summary for a complaint (Phase 4)
+   * Returns timeline, key actions, and status summary
+   * @param {string} id - Complaint ID
+   * @returns {Object} Summary result
+   */
+  getSummary: async (id) => {
+    try {
+      const response = await api.get(`/complaints/${id}/summary`);
+      return response.data;
+    } catch (error) {
+      console.warn('Summary fetch failed:', error.message);
+      return { success: true, summary: null, error: 'Summary unavailable' };
+    }
   }
 };
 

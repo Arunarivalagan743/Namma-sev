@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { adminService } from '../../services/admin.service';
 import { complaintService } from '../../services/complaint.service';
 import { 
@@ -18,6 +18,9 @@ import {
 import toast from 'react-hot-toast';
 import { useTranslation } from '../../context/TranslationContext';
 import TranslatedText from '../../components/TranslatedText';
+
+// AI Components - Lazy loaded for performance
+const ComplaintSummary = lazy(() => import('../../components/ai/ComplaintSummary'));
 
 // Translatable status labels
 const STATUS_LABELS = {
@@ -389,6 +392,17 @@ const ManageComplaints = () => {
                 <p className="text-xs sm:text-sm text-gray-500">Description</p>
                 <p className="text-sm text-gray-700 mt-1">{selectedComplaint.description}</p>
               </div>
+
+              {/* AI Summary - Collapsible, shows timeline and status overview */}
+              <Suspense fallback={<div className="animate-pulse h-20 bg-gray-100 rounded-lg mt-2"></div>}>
+                <ComplaintSummary
+                  complaintId={selectedComplaint.id}
+                  autoLoad={true}
+                  collapsible={true}
+                  defaultExpanded={false}
+                  className="mt-2"
+                />
+              </Suspense>
 
               {/* Images in Modal */}
               {(selectedComplaint.image_url || selectedComplaint.image_url_2 || selectedComplaint.image_url_3) && (

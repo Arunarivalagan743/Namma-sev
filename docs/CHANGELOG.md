@@ -6,6 +6,59 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.0.1] - 2026-02-08
+
+### Documentation & Code Cleanup
+
+This maintenance release focuses on removing dead code, consolidating documentation, and fixing Mongoose duplicate index warnings.
+
+#### Removed
+- Redundant documentation files:
+  - `AI_INTEGRATION_REPORT.md` (merged into ARCHITECTURE)
+  - `CONTRIBUTING.md` (not actively maintained)
+  - `CREDENTIAL_RESET_GUIDE.md` (internal-only)
+  - `DEPLOYMENT_CHECKLIST.md` (superseded by DEPLOYMENT)
+  - `FIREBASE_SETUP.md` (merged into DEPLOYMENT)
+  - `FRONTEND_AI_INTEGRATION.md` (merged into FEATURE_USAGE)
+  - `QUICK_START.md` (empty)
+  - `REPO_CLEANUP_REPORT.md` (historical)
+  - `SECURITY_OPERATIONS.md` (merged into SECURITY)
+  - `SECURITY_REVIEW_CREDENTIAL_RESET.md` (internal-only)
+  - `TEST_USER_FILES_REFERENCE.md` (historical)
+  - `TEST_USER_GUIDE.md` (empty)
+  - `docs/archive/` folder (historical phase reports)
+  - `docs/troubleshooting/` folder (temporary guides)
+- Root-level temp files:
+  - `CREDENTIALS.txt`
+  - `DELIVERY_CHECKLIST.md`
+  - `FILE_LOCATIONS.md`
+  - `START_HERE.md`
+  - `TEST_USER_SETUP_SUMMARY.md`
+- Unused model files:
+  - `Schemes.js` (duplicate of Scheme.js)
+  - `Engagement.js` (unused)
+- Redundant scripts:
+  - `reset-credentials-simple.js`
+  - `reset-creds.js`
+  - `quick-test-user.js`
+  - `check-firebase.js`
+- Empty `logs/` folder
+
+#### Fixed
+- Mongoose duplicate schema index warnings for:
+  - User model (firebaseUid, email, status, panchayatCode)
+  - Complaint model (trackingId, userId, status, category)
+  - ComplaintHistory model (complaintId)
+  - Announcement model (priority, isActive)
+  - News model (isFeatured)
+  - SuperAdmin model (firebaseUid, email, status)
+  - Tenant model (tenantCode, type, status)
+
+#### Changed
+- Updated INDEX.md to reflect consolidated documentation
+
+---
+
 ## [1.0.0] - 2026-02-08
 
 ### Repository Cleanup & Standardization

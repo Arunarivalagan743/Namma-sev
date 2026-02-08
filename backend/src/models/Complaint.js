@@ -9,14 +9,12 @@ const complaintSchema = new mongoose.Schema({
   trackingId: {
     type: String,
     required: true,
-    unique: true,
-    index: true
+    unique: true
   },
   userId: {
     type: String,
     required: true,
-    ref: 'User',
-    index: true
+    ref: 'User'
   },
   title: {
     type: String,
@@ -41,8 +39,7 @@ const complaintSchema = new mongoose.Schema({
       'Encroachment',
       'Noise Pollution',
       'Other'
-    ],
-    index: true
+    ]
   },
   location: {
     type: String,
@@ -51,8 +48,7 @@ const complaintSchema = new mongoose.Schema({
   status: {
     type: String,
     enum: ['pending', 'in_progress', 'resolved', 'rejected'],
-    default: 'pending',
-    index: true
+    default: 'pending'
   },
   priority: {
     type: String,
@@ -109,8 +105,7 @@ const complaintSchema = new mongoose.Schema({
   collection: 'complaints'
 });
 
-// Indexes
-complaintSchema.index({ trackingId: 1 });
+// Indexes (only for fields without unique: true)
 complaintSchema.index({ userId: 1 });
 complaintSchema.index({ status: 1 });
 complaintSchema.index({ category: 1 });

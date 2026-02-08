@@ -9,14 +9,12 @@ const userSchema = new mongoose.Schema({
   firebaseUid: {
     type: String,
     required: true,
-    unique: true,
-    index: true
+    unique: true
   },
   email: {
     type: String,
     required: true,
-    unique: true,
-    index: true
+    unique: true
   },
   name: {
     type: String,
@@ -40,8 +38,7 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
     default: 'TIRU001',
-    maxLength: 20,
-    index: true
+    maxLength: 20
   },
   role: {
     type: String,
@@ -51,8 +48,7 @@ const userSchema = new mongoose.Schema({
   status: {
     type: String,
     enum: ['pending', 'approved', 'rejected'],
-    default: 'pending',
-    index: true
+    default: 'pending'
   },
   rejectionReason: {
     type: String
@@ -62,9 +58,7 @@ const userSchema = new mongoose.Schema({
   collection: 'users'
 });
 
-// Indexes
-userSchema.index({ firebaseUid: 1 });
-userSchema.index({ email: 1 });
+// Indexes (only for fields without unique: true)
 userSchema.index({ status: 1 });
 userSchema.index({ panchayatCode: 1 });
 

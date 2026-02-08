@@ -15,15 +15,13 @@ const superAdminSchema = new mongoose.Schema({
   firebaseUid: {
     type: String,
     required: true,
-    unique: true,
-    index: true
+    unique: true
   },
 
   email: {
     type: String,
     required: true,
-    unique: true,
-    index: true
+    unique: true
   },
 
   name: {
@@ -48,8 +46,7 @@ const superAdminSchema = new mongoose.Schema({
       'support_admin',       // Read-only + support actions
       'auditor'              // Read-only access for compliance
     ],
-    default: 'support_admin',
-    index: true
+    default: 'support_admin'
   },
 
   // Regional restrictions (for regional_admin role)
@@ -73,8 +70,7 @@ const superAdminSchema = new mongoose.Schema({
   status: {
     type: String,
     enum: ['active', 'inactive', 'suspended'],
-    default: 'active',
-    index: true
+    default: 'active'
   },
 
   // Security
@@ -128,8 +124,7 @@ const superAdminSchema = new mongoose.Schema({
   collection: 'super_admins'
 });
 
-// Indexes
-superAdminSchema.index({ email: 1 });
+// Indexes (only for fields without unique: true)
 superAdminSchema.index({ role: 1, status: 1 });
 
 // Methods

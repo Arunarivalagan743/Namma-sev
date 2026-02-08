@@ -9,8 +9,7 @@ const complaintHistorySchema = new mongoose.Schema({
   complaintId: {
     type: String,
     required: true,
-    ref: 'Complaint',
-    index: true
+    ref: 'Complaint'
   },
   status: {
     type: String,

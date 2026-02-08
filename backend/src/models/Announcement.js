@@ -18,13 +18,11 @@ const announcementSchema = new mongoose.Schema({
   priority: {
     type: String,
     enum: ['low', 'normal', 'high', 'urgent'],
-    default: 'normal',
-    index: true
+    default: 'normal'
   },
   isActive: {
     type: Boolean,
-    default: true,
-    index: true
+    default: true
   },
   createdBy: {
     type: String,

@@ -1,26 +1,14 @@
 /**
- * NamSev - Secure Test Credential Reset Script
+ * NamSev - Simple Credential Reset Script
  *
- * Security Features:
- * - Environment validation
- * - Dry-run mode
- * - Confirmation prompts
- * - Audit logging
- * - Production protection
+ * Creates admin and test user accounts in both Firebase and MongoDB
  *
- * Usage:
- *   node reset-test-credentials.js --env=development --dry-run
- *   node reset-test-credentials.js --env=staging --confirm
- *   node reset-test-credentials.js --env=production --force --confirm (DANGEROUS)
- *
- * @module scripts/reset-test-credentials
+ * Usage: node reset-test-credentials.js
  */
 
-require('dotenv').config();
+require('dotenv').config({ path: path.join(__dirname, '../.env') });
 const admin = require('firebase-admin');
 const mongoose = require('mongoose');
-const crypto = require('crypto');
-const fs = require('fs');
 const path = require('path');
 
 // ============================================================================

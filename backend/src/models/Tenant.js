@@ -19,7 +19,6 @@ const tenantSchema = new mongoose.Schema({
     uppercase: true,
     trim: true,
     maxLength: 20,
-    index: true,
     match: [/^[A-Z0-9_]+$/, 'Tenant code must be alphanumeric uppercase']
   },
 
@@ -34,8 +33,7 @@ const tenantSchema = new mongoose.Schema({
   type: {
     type: String,
     required: true,
-    enum: ['panchayat', 'block', 'taluk', 'district', 'municipality', 'corporation'],
-    index: true
+    enum: ['panchayat', 'block', 'taluk', 'district', 'municipality', 'corporation']
   },
 
   // Geographic hierarchy
@@ -50,8 +48,7 @@ const tenantSchema = new mongoose.Schema({
   status: {
     type: String,
     enum: ['pending', 'active', 'suspended', 'archived'],
-    default: 'pending',
-    index: true
+    default: 'pending'
   },
 
   // Activation details
