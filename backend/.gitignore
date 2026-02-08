@@ -29,6 +29,14 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+# Security & Test Credentials (NEVER COMMIT)
+docs/TEST_CREDENTIALS.md
+*.secrets
+*.credentials
+*.keys
+*.pem
+security_audit.log
+
 # Build outputs
 dist/
 build/
