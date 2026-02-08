@@ -8,6 +8,19 @@ node_modules/
 .env.development
 .env.production
 
+# Credentials (NEVER COMMIT)
+CREDENTIALS.txt
+*CREDENTIALS*.md
+*CREDENTIALS*.txt
+*.credentials
+*.secrets
+*.keys
+*.pem
+
+# Firebase service accounts
+*service-account*.json
+firebase-service-account.json
+
 # Build outputs
 dist/
 build/
@@ -34,4 +47,14 @@ coverage/
 tmp/
 temp/
 *.tmp
+
+# Documentation - archive and detailed reports (keep main docs)
+docs/archive/
+docs/troubleshooting/
+docs/AI_ACTION_LOG.md
+docs/AI_AGENT_CONTEXT.md
+docs/REPO_CLEANUP_REPORT.md
+docs/CREDENTIAL_RESET_GUIDE.md
+docs/SECURITY_REVIEW_CREDENTIAL_RESET.md
+docs/SECURITY_OPERATIONS.md
 
