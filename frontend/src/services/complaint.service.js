@@ -152,7 +152,7 @@ export const complaintService = {
   /**
    * Check for duplicate complaints before submission (Phase 4)
    * Non-blocking - warns user of similar complaints
-   * @param {Object} data - { title, description, category }
+   * @param {Object} data - { title, description, category, location }
    * @returns {Object} Duplicate check result
    */
   checkDuplicates: async (data) => {

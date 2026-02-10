@@ -86,6 +86,31 @@ const createComplaint = async (req, res) => {
       });
     }
 
+    const normalizedWardNumber = (wardNumber || '').trim();
+    const normalizedContactPhone = (contactPhone || '').trim();
+
+    if (!normalizedWardNumber) {
+      return res.status(400).json({
+        error: 'Validation Error',
+        message: 'Ward number is required'
+      });
+    }
+
+    if (!normalizedContactPhone) {
+      return res.status(400).json({
+        error: 'Validation Error',
+        message: 'Alternate contact number is required'
+      });
+    }
+
+    const phoneRegex = /^[0-9+\-\s]{7,15}$/;
+    if (!phoneRegex.test(normalizedContactPhone)) {
+      return res.status(400).json({
+        error: 'Validation Error',
+        message: 'Alternate contact number must be 7-15 digits'
+      });
+    }
+
     // AI-enhanced processing
     let aiProcessing = null;
     let finalPriority = priority || 'normal';
@@ -93,7 +118,7 @@ const createComplaint = async (req, res) => {
 
     if (aiServices) {
       try {
-        const text = `${title} ${description}`;
+        const text = [title, description, location].filter(Boolean).join(' ');
 
         // AI Priority scoring (if not manually set)
         if (!priority) {
@@ -154,8 +179,8 @@ const createComplaint = async (req, res) => {
       imageUrl: imageUrl1,
       imageUrl2: imageUrl2,
       imageUrl3: imageUrl3,
-      contactPhone: contactPhone || null,
-      wardNumber: wardNumber || null,
+      contactPhone: normalizedContactPhone,
+      wardNumber: normalizedWardNumber,
       isPublic: isPublic || false,
       estimatedResolutionDays: estimatedDays,
       status: 'pending'
@@ -660,7 +685,7 @@ const toggleComplaintVisibility = async (req, res) => {
  */
 const previewEnrichment = async (req, res) => {
   try {
-    const { title, description, category } = req.body;
+    const { title, description, category, location } = req.body;
 
     if (!title && !description) {
       return res.status(400).json({ error: 'Title or description is required' });
@@ -713,13 +738,16 @@ const previewEnrichment = async (req, res) => {
 const checkDuplicates = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { title, description, category } = req.body;
+    const { title, description, category, location } = req.body;
 
     if (!title && !description) {
       return res.status(400).json({ error: 'Title or description is required' });
     }
 
-    const text = `${title || ''} ${description || ''}`.trim();
+    const text = [title, description, location]
+      .filter(part => typeof part === 'string' && part.trim().length > 0)
+      .join(' ')
+      .trim();
 
     // Check semantic duplicate service first (Phase 4)
     if (aiServices?.semanticDuplicateService) {

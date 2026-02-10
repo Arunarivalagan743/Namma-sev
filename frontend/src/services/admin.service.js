@@ -45,6 +45,12 @@ export const adminService = {
     return response.data;
   },
 
+  // Complaint AI summary
+  getComplaintSummary: async (complaintId, params = {}) => {
+    const response = await api.get(`/admin/ai/summarize/${complaintId}`, { params });
+    return response.data;
+  },
+
   // Analytics
   getComplaintAnalytics: async () => {
     const response = await api.get('/admin/complaints/analytics');

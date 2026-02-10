@@ -159,7 +159,7 @@ const services = {
  */
 const processComplaint = async (complaint) => {
   const startTime = Date.now();
-  const { title = '', description = '', category, userId } = complaint;
+  const { title = '', description = '', category, userId, location = '' } = complaint;
 
   const results = {
     processed: true,
@@ -175,7 +175,10 @@ const processComplaint = async (complaint) => {
 
   try {
     // Step 1: Preprocess text
-    const text = `${title} ${description}`.trim();
+    const text = [title, description, location]
+      .filter(part => typeof part === 'string' && part.trim().length > 0)
+      .join(' ')
+      .trim();
     const processedText = preprocessor.preprocess(text, { removeStops: false });
 
     // Step 2: Score priority (always runs, <1ms)

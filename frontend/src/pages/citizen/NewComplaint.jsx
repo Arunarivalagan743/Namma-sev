@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { complaintService } from '../../services/complaint.service';
-import { FiSend, FiMapPin, FiFileText, FiTag, FiAlertCircle, FiImage, FiPhone, FiInfo, FiTruck, FiDroplet, FiZap, FiTrash2, FiSun, FiActivity, FiHeart, FiHome, FiVolume2, FiClipboard } from 'react-icons/fi';
+import { FiSend, FiMapPin, FiFileText, FiTag, FiAlertCircle, FiImage, FiPhone, FiInfo, FiTruck, FiDroplet, FiZap, FiTrash2, FiSun, FiActivity, FiHeart, FiHome, FiVolume2, FiClipboard, FiCheckCircle, FiXCircle } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import CitizenNav from '../../components/CitizenNav';
 import ImageUpload from '../../components/ImageUpload';
@@ -23,6 +23,18 @@ const NewComplaint = () => {
     contactPhone: '',
     imageUrls: [],
     isPublic: false
+  });
+
+  // AI Features State
+  const [aiState, setAiState] = useState({
+    duplicateChecking: false,
+    duplicateWarning: null,
+    similarComplaints: [],
+    suggestedCategory: null,
+    suggestedPriority: null,
+    showingSuggestions: false,
+    enrichmentSuggestions: null,
+    showEnrichment: false
   });
 
   const categories = complaintService.getCategories();
@@ -63,6 +75,156 @@ const NewComplaint = () => {
     ]);
   }, []);
 
+  // AI: Check for duplicates when description changes
+  const checkDuplicates = useCallback(async () => {
+    if (!formData.title && !formData.description) return;
+    if (formData.title.length < 10 && formData.description.length < 30) return;
+
+    console.log('🔍 Checking duplicates...', { title: formData.title, description: formData.description, location: formData.location });
+    setAiState(prev => ({ ...prev, duplicateChecking: true }));
+
+    try {
+      const response = await complaintService.checkDuplicates({
+        title: formData.title,
+        description: formData.description,
+        category: formData.category,
+        location: formData.location
+      });
+
+      console.log('📊 Duplicate check response:', response);
+
+      if (response.hasDuplicates && response.duplicates && response.duplicates.length > 0) {
+        console.log('⚠️ Duplicates found:', response.duplicates.length);
+        setAiState(prev => ({
+          ...prev,
+          duplicateWarning: {
+            similarity: response.highestSimilarity || 0.7,
+            recommendation: response.recommendation || 'Similar complaints found in your area',
+            confidenceBand: response.confidenceBand || 'medium'
+          },
+          similarComplaints: response.duplicates,
+          duplicateChecking: false
+        }));
+      } else {
+        console.log('✓ No duplicates found');
+        setAiState(prev => ({
+          ...prev,
+          duplicateWarning: null,
+          similarComplaints: [],
+          duplicateChecking: false
+        }));
+      }
+    } catch (error) {
+      console.error('❌ Duplicate check failed:', error);
+      setAiState(prev => ({ ...prev, duplicateChecking: false }));
+    }
+  }, [formData.title, formData.description, formData.category, formData.location]);
+
+  // AI: Check for content enrichment suggestions
+  const checkEnrichment = useCallback(async () => {
+    if (formData.description.length < 30) return;
+
+    try {
+      const response = await complaintService.previewEnrichment({
+        title: formData.title,
+        description: formData.description,
+        category: formData.category,
+        location: formData.location
+      });
+
+      console.log('💡 Enrichment response:', response);
+
+      if (response.enrichment && response.enrichment.suggestions && response.enrichment.suggestions.length > 0) {
+        setAiState(prev => ({
+          ...prev,
+          enrichmentSuggestions: response.enrichment,
+          showEnrichment: true
+        }));
+      } else {
+        setAiState(prev => ({
+          ...prev,
+          enrichmentSuggestions: null,
+          showEnrichment: false
+        }));
+      }
+    } catch (error) {
+      console.error('Enrichment check failed:', error);
+    }
+  }, [formData.title, formData.description, formData.category, formData.location]);
+
+  // AI: Auto-suggest category and priority
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (formData.description.length >= 30) {
+        // Simple ML-based category suggestion
+        const desc = formData.description.toLowerCase();
+        let suggestedCat = null;
+        let suggestedPri = 'normal';
+
+        // Category keywords
+        if (desc.includes('water') || desc.includes('pipe') || desc.includes('supply') || desc.includes('leakage')) {
+          suggestedCat = 'Water Supply';
+        } else if (desc.includes('road') || desc.includes('pothole') || desc.includes('street') || desc.includes('tar')) {
+          suggestedCat = 'Road & Infrastructure';
+        } else if (desc.includes('electricity') || desc.includes('power') || desc.includes('current') || desc.includes('electric')) {
+          suggestedCat = 'Electricity';
+        } else if (desc.includes('garbage') || desc.includes('waste') || desc.includes('trash') || desc.includes('dustbin')) {
+          suggestedCat = 'Sanitation';
+        } else if (desc.includes('light') || desc.includes('lamp') || desc.includes('bulb') || desc.includes('dark')) {
+          suggestedCat = 'Street Lights';
+        } else if (desc.includes('drain') || desc.includes('sewage') || desc.includes('clog') || desc.includes('overflow')) {
+          suggestedCat = 'Drainage';
+        }
+
+        // Priority keywords
+        if (desc.includes('emergency') || desc.includes('urgent') || desc.includes('accident') || 
+            desc.includes('fire') || desc.includes('flood') || desc.includes('danger') || desc.includes('immediately')) {
+          suggestedPri = 'urgent';
+        } else if (desc.includes('burst') || desc.includes('leak') || desc.includes('overflow') ||
+                   desc.includes('blocked') || desc.includes('broken') || desc.includes('no water') || desc.includes('no supply')) {
+          suggestedPri = 'high';
+        }
+
+        // Update AI state
+        setAiState(prev => ({
+          ...prev,
+          suggestedCategory: suggestedCat,
+          suggestedPriority: suggestedPri,
+          showingSuggestions: !!(suggestedCat || suggestedPri !== 'normal')
+        }));
+
+        // ALWAYS auto-apply suggestions
+        if (suggestedCat) {
+          setFormData(prev => ({ ...prev, category: suggestedCat }));
+        }
+        if (suggestedPri !== 'normal') {
+          setFormData(prev => ({ ...prev, priority: suggestedPri }));
+        }
+
+        // Also trigger duplicate check when description is complete
+        console.log('📝 Description complete, checking for duplicates...');
+        checkDuplicates();
+        checkEnrichment();
+      }
+    }, 1000); // Debounce 1 second
+
+    return () => clearTimeout(timer);
+  }, [formData.description, checkDuplicates, checkEnrichment]);
+
+  // Trigger duplicate check when location is filled (location-based detection)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (formData.location && formData.location.length >= 5 && 
+          formData.description.length >= 30) {
+        console.log('📍 Location filled, checking duplicates and enrichment...');
+        checkDuplicates();
+        checkEnrichment();
+      }
+    }, 1500); // Check after user stops typing location
+
+    return () => clearTimeout(timer);
+  }, [formData.location, checkDuplicates, checkEnrichment]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -81,8 +243,8 @@ const NewComplaint = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!formData.title || !formData.description || !formData.category) {
-      toast.error('Please fill in all required fields');
+    if (!formData.title || !formData.description || !formData.category || !formData.wardNumber || !formData.contactPhone) {
+      toast.error('Please fill in all required fields, including ward number and alternate contact');
       return;
     }
 
@@ -96,10 +258,22 @@ const NewComplaint = () => {
       return;
     }
 
+    const phoneDigits = formData.contactPhone.replace(/[^0-9+\-\s]/g, '').trim();
+    const phoneRegex = /^[0-9+\-\s]{7,15}$/;
+    if (!phoneRegex.test(phoneDigits)) {
+      toast.error('Please enter a valid alternate contact number (7-15 digits)');
+      return;
+    }
+
+    const submissionData = {
+      ...formData,
+      contactPhone: phoneDigits
+    };
+
     setLoading(true);
 
     try {
-      const response = await complaintService.create(formData);
+      const response = await complaintService.create(submissionData);
       toast.success(
         <div>
           <p className="font-semibold">Complaint submitted!</p>
@@ -262,13 +436,17 @@ const NewComplaint = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gov-blue mb-1.5 sm:mb-2">
-                <TranslatedText text="Ward Number" />
+                <span className="flex items-center space-x-1">
+                  <TranslatedText text="Ward Number" />
+                  <span className="text-gov-red">*</span>
+                </span>
               </label>
               <select
                 name="wardNumber"
                 value={formData.wardNumber}
                 onChange={handleChange}
                 className="input-field text-sm sm:text-base"
+                required
               >
                 <option value="">{t('selectCategory')}</option>
                 {wards.map((ward) => (
@@ -280,7 +458,7 @@ const NewComplaint = () => {
               <label className="block text-sm font-medium text-gov-blue mb-1.5 sm:mb-2">
                 <span className="flex items-center space-x-2">
                   <FiPhone size={16} />
-                  <span><TranslatedText text="Alternate Contact" /></span>
+                  <span><TranslatedText text="Alternate Contact" /> *</span>
                 </span>
               </label>
               <input
@@ -291,7 +469,12 @@ const NewComplaint = () => {
                 placeholder={t('phoneNumber')}
                 className="input-field text-sm sm:text-base"
                 maxLength={15}
+                minLength={7}
+                required
               />
+              <p className="text-xs text-gray-400 mt-1">
+                <TranslatedText text="Provide a reachable number for field staff" />
+              </p>
             </div>
           </div>
 
@@ -308,12 +491,17 @@ const NewComplaint = () => {
               name="location"
               value={formData.location}
               onChange={handleChange}
-              placeholder={t('location')}
+              placeholder="e.g., Anna Nagar, near bus stand"
               className="input-field text-sm sm:text-base"
               maxLength={255}
               required
             />
-            <p className="text-xs text-gray-400 mt-1"><TranslatedText text="Include street name, landmark, and area" /></p>
+            <p className="text-xs text-gray-400 mt-1">
+              <TranslatedText text="Include street name, landmark, and area" />
+              {formData.location.length >= 5 && (
+                <span className="text-blue-600 ml-2">📍 Checking for complaints in this area...</span>
+              )}
+            </p>
           </div>
 
           {/* Description */}
@@ -334,6 +522,146 @@ const NewComplaint = () => {
               <p className="text-xs text-gray-400">{formData.description.length} chars</p>
             </div>
           </div>
+
+          {/* AI Duplicate Detection Warning */}
+          {aiState.duplicateWarning && aiState.similarComplaints.length > 0 && (
+            <div className="bg-yellow-50 border-2 border-yellow-400 rounded-lg p-4 animate-pulse">
+              <div className="flex items-start space-x-3">
+                <FiAlertCircle className="text-yellow-600 flex-shrink-0 mt-0.5" size={24} />
+                <div className="flex-1">
+                  <h4 className="font-semibold text-yellow-800 flex items-center space-x-2">
+                    <span>⚠️ Similar Complaint Found in Your Area!</span>
+                    <span className="text-xs font-normal bg-yellow-200 px-2 py-1 rounded">
+                      {Math.round(aiState.duplicateWarning.similarity * 100)}% match
+                    </span>
+                  </h4>
+                  <p className="text-yellow-700 text-sm mt-1">
+                    {aiState.duplicateWarning.recommendation}
+                  </p>
+                  <div className="mt-3 space-y-2">
+                    {aiState.similarComplaints.slice(0, 2).map((complaint, idx) => (
+                      <div key={idx} className="bg-white rounded p-3 border border-yellow-200">
+                        <div className="flex justify-between items-start mb-1">
+                          <span className="font-medium text-sm text-gray-800">{complaint.title}</span>
+                          <span className="text-xs bg-yellow-100 px-2 py-0.5 rounded">{Math.round(complaint.similarity * 100)}% similar</span>
+                        </div>
+                        <p className="text-xs text-gray-600 line-clamp-2">{complaint.description}</p>
+                        <div className="flex items-center space-x-3 mt-2 text-xs text-gray-500">
+                          <span className="flex items-center space-x-1">
+                            <FiTag size={12} />
+                            <span>{complaint.category}</span>
+                          </span>
+                          <span className="flex items-center space-x-1">
+                            <FiMapPin size={12} />
+                            <span>{complaint.location}</span>
+                          </span>
+                          <span className={`px-2 py-0.5 rounded ${
+                            complaint.status === 'resolved' ? 'bg-green-100 text-green-700' :
+                            complaint.status === 'in_progress' ? 'bg-blue-100 text-blue-700' :
+                            'bg-gray-100 text-gray-700'
+                          }`}>
+                            {complaint.status}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-xs text-yellow-600 mt-3">
+                    💡 Found complaints in "{formData.location}". Check if your issue is already reported. You can still submit if it's different or more severe.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* AI Suggestions Banner */}
+          {aiState.showingSuggestions && (aiState.suggestedCategory || aiState.suggestedPriority !== 'normal') && (
+            <div className="bg-green-50 border border-green-300 rounded-lg p-4">
+              <div className="flex items-start space-x-3">
+                <FiCheckCircle className="text-green-600 flex-shrink-0 mt-0.5" size={20} />
+                <div className="flex-1">
+                  <h4 className="font-semibold text-green-800 flex items-center space-x-2">
+                    <span>🤖 AI Suggestions Applied</span>
+                  </h4>
+                  <div className="mt-2 space-y-1 text-sm text-green-700">
+                    {aiState.suggestedCategory && (
+                      <p>✓ Category: <span className="font-semibold">{aiState.suggestedCategory}</span></p>
+                    )}
+                    {aiState.suggestedPriority && aiState.suggestedPriority !== 'normal' && (
+                      <p>✓ Priority: <span className="font-semibold capitalize">{aiState.suggestedPriority}</span></p>
+                    )}
+                  </div>
+                  <p className="text-xs text-green-600 mt-2">
+                    Based on your description, we've auto-selected these. You can change them if needed.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Checking Duplicates Indicator */}
+          {aiState.duplicateChecking && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+              <div className="flex items-center space-x-3">
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-600 border-t-transparent"></div>
+                <span className="text-sm text-blue-700">🔍 Checking for similar complaints...</span>
+              </div>
+            </div>
+          )}
+
+          {/* Content Enrichment Suggestions */}
+          {aiState.showEnrichment && aiState.enrichmentSuggestions && aiState.enrichmentSuggestions.suggestions && aiState.enrichmentSuggestions.suggestions.length > 0 && (
+            <div className="bg-purple-50 border border-purple-300 rounded-lg p-4">
+              <div className="flex items-start space-x-3">
+                <FiInfo className="text-purple-600 flex-shrink-0 mt-0.5" size={20} />
+                <div className="flex-1">
+                  <h4 className="font-semibold text-purple-800 flex items-center space-x-2">
+                    <span>💡 AI Suggests Adding More Details</span>
+                    <span className="text-xs font-normal bg-purple-200 px-2 py-1 rounded">
+                      Score: {Math.min(100, Math.round((aiState.enrichmentSuggestions.completenessScore || 0.5) * 100))}%
+                    </span>
+                  </h4>
+                  <p className="text-purple-700 text-sm mt-1">
+                    Your complaint could be more effective with these details:
+                  </p>
+                  <div className="mt-3 space-y-2">
+                    {aiState.enrichmentSuggestions.suggestions.slice(0, 3).map((suggestion, idx) => (
+                      <div key={idx} className="bg-white rounded p-3 border border-purple-200">
+                        <div className="flex items-start space-x-2">
+                          <span className="text-purple-600 font-bold">{idx + 1}.</span>
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-gray-800 capitalize">
+                              {typeof suggestion === 'object' ? (suggestion.field || suggestion.type || 'Detail') : suggestion}
+                            </p>
+                            {typeof suggestion === 'object' && suggestion.reason && (
+                              <p className="text-xs text-gray-600 mt-1">{suggestion.reason}</p>
+                            )}
+                            {typeof suggestion === 'object' && suggestion.examples && suggestion.examples.length > 0 && (
+                              <p className="text-xs text-purple-600 mt-1">
+                                💬 Example: {typeof suggestion.examples[0] === 'string' ? suggestion.examples[0] : JSON.stringify(suggestion.examples[0])}
+                              </p>
+                            )}
+                            {typeof suggestion === 'object' && suggestion.example && (
+                              <p className="text-xs text-purple-600 mt-1">
+                                💬 Example: {suggestion.example}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  {aiState.enrichmentSuggestions.missingContext && aiState.enrichmentSuggestions.missingContext.length > 0 && (
+                    <p className="text-xs text-purple-600 mt-3">
+                      ℹ️ Missing: {aiState.enrichmentSuggestions.missingContext.map(ctx => 
+                        typeof ctx === 'object' ? (ctx.field || ctx.type || ctx.name || 'detail') : ctx
+                      ).join(', ')}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Image Upload */}
           <div>

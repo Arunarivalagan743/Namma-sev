@@ -117,7 +117,11 @@ const findSimilarTFIDF = (text, candidates) => {
   if (!candidates || candidates.length === 0) return [];
 
   // Build TF-IDF for all documents including the new one
-  const allTexts = [text, ...candidates.map(c => `${c.title || ''} ${c.description || ''}`)];
+  const combineFields = (complaint) => [complaint.title, complaint.description, complaint.location]
+    .filter(field => typeof field === 'string' && field.trim().length > 0)
+    .join(' ');
+
+  const allTexts = [text, ...candidates.map(c => combineFields(c))];
   const { vectors } = buildTFIDF(allTexts);
 
   const newVector = vectors[0];
@@ -148,7 +152,9 @@ const findSimilarJaccard = (text, candidates) => {
   const similarities = [];
 
   candidates.forEach(candidate => {
-    const candidateText = `${candidate.title || ''} ${candidate.description || ''}`;
+    const candidateText = [candidate.title, candidate.description, candidate.location]
+      .filter(field => typeof field === 'string' && field.trim().length > 0)
+      .join(' ');
     const similarity = preprocessor.jaccardSimilarity(text, candidateText);
 
     if (similarity >= SIMILARITY_THRESHOLD * 0.8) {  // Lower threshold for screening

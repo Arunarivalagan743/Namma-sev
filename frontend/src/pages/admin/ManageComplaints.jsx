@@ -13,7 +13,8 @@ import {
   FiImage,
   FiExternalLink,
   FiEye,
-  FiEyeOff
+  FiEyeOff,
+  FiBookOpen
 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { useTranslation } from '../../context/TranslationContext';
@@ -38,6 +39,7 @@ const ManageComplaints = () => {
   const [categoryFilter, setCategoryFilter] = useState('');
   const [search, setSearch] = useState('');
   const [selectedComplaint, setSelectedComplaint] = useState(null);
+  const [summaryComplaint, setSummaryComplaint] = useState(null);
   const [newStatus, setNewStatus] = useState('');
   const [remarks, setRemarks] = useState('');
   const [updating, setUpdating] = useState(false);
@@ -292,6 +294,14 @@ const ManageComplaints = () => {
 
                   <div className="flex items-center space-x-2 sm:space-x-3 ml-6 sm:ml-8 lg:ml-0">
                     {getStatusBadge(complaint.status)}
+                    <button
+                      onClick={() => setSummaryComplaint(complaint)}
+                      className="flex items-center space-x-1 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded bg-white border border-gov-blue text-gov-blue hover:bg-gov-blue hover:text-white transition-colors text-xs sm:text-sm"
+                      title="View AI summary"
+                    >
+                      <FiBookOpen size={12} />
+                      <span className="hidden sm:inline">Summary</span>
+                    </button>
                     {/* Visibility Toggle - Can only make public, not private (transparency) */}
                     {complaint.is_public ? (
                       // Public complaints show locked badge - cannot be made private
@@ -479,6 +489,41 @@ const ManageComplaints = () => {
                   <span>Update Status</span>
                 )}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* AI Summary Modal */}
+      {summaryComplaint && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-3 sm:p-4">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-3 sm:p-4 border-b border-gray-200">
+              <div>
+                <h3 className="font-semibold text-gov-blue text-sm sm:text-base flex items-center space-x-2">
+                  <FiBookOpen />
+                  <span>Complaint Summary</span>
+                </h3>
+                <p className="text-xs text-gray-500 mt-1">
+                  Tracking ID: <span className="font-mono">{summaryComplaint.tracking_id}</span>
+                </p>
+              </div>
+              <button
+                onClick={() => setSummaryComplaint(null)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <FiX size={22} />
+              </button>
+            </div>
+            <div className="p-4 sm:p-6">
+              <Suspense fallback={<div className="animate-pulse h-32 bg-gray-100 rounded-lg"></div>}>
+                <ComplaintSummary
+                  complaintId={summaryComplaint.id}
+                  autoLoad={true}
+                  collapsible={false}
+                  defaultExpanded={true}
+                />
+              </Suspense>
             </div>
           </div>
         </div>

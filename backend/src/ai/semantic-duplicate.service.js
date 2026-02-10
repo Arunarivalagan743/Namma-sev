@@ -301,7 +301,9 @@ const findSemanticDuplicates = async (text, userId, options = {}) => {
         candidateVector = cachedVectors[candidate._id].vector;
       } else {
         // Build and cache vector
-        const candidateText = `${candidate.title || ''} ${candidate.description || ''}`;
+        const candidateText = [candidate.title, candidate.description, candidate.location]
+          .filter(field => typeof field === 'string' && field.trim().length > 0)
+          .join(' ');
         const { vector, tokenCount: candTokens } = buildVector(candidateText);
         candidateVector = vector;
 

@@ -64,12 +64,17 @@ const ComplaintSummary = ({
     setError(null);
 
     try {
-      const response = await adminService.getComplaintSummary(complaintId);
+      const response = await adminService.getComplaintSummary(
+        complaintId,
+        forceRefresh ? { forceRegenerate: true } : undefined
+      );
 
-      if (response.success && response.summary) {
-        setSummary(response.summary);
+      const summaryPayload = response?.summary || response?.data;
+
+      if (response?.success && summaryPayload) {
+        setSummary(summaryPayload);
       } else {
-        setError(response.message || 'Summary not available');
+        setError(response?.message || 'Summary not available');
       }
     } catch (err) {
       console.warn('Summary fetch failed:', err.message);
